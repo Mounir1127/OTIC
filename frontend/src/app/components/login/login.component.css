@@ -1,0 +1,4 @@
+/* Custom styles for login */
+.card-header {
+    border-radius: 0.3rem 0.3rem 0 0 !important;
+}
