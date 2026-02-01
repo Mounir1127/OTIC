@@ -12,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
     styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-    credentials = { email: '', password: '' };
+    credentials = { identifier: '', password: '' };
     error = '';
 
     constructor(private authService: AuthService, private router: Router) { }

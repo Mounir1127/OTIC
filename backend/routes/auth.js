@@ -8,7 +8,7 @@ const User = require("../models/User");
 // @desc    Register user
 // @access  Public
 router.post("/register", async (req, res) => {
-    const { username, email, password } = req.body;
+    const { nom, prenom, email, telephone, password, adresse } = req.body;
 
     try {
         let user = await User.findOne({ email });
@@ -18,9 +18,14 @@ router.post("/register", async (req, res) => {
         }
 
         user = new User({
-            username,
+            nom,
+            prenom,
             email,
+            telephone,
             password,
+            adresse,
+            role: "consommateur_simple", // Explicitly setting default if needed, though schema handles it
+            photoProfil: null
         });
 
         const salt = await bcrypt.genSalt(10);
@@ -53,10 +58,13 @@ router.post("/register", async (req, res) => {
 // @desc    Authenticate user & get token
 // @access  Public
 router.post("/login", async (req, res) => {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
     try {
-        let user = await User.findOne({ email });
+        // Check if identifier matches email or telephone
+        let user = await User.findOne({
+            $or: [{ email: identifier }, { telephone: identifier }]
+        });
 
         if (!user) {
             return res.status(400).json({ msg: "Invalid Credentials" });

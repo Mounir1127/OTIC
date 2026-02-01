@@ -1,4 +1,150 @@
-/* Custom styles for register */
-.card-header {
-    border-radius: 0.3rem 0.3rem 0 0 !important;
+/* Main Container */
+:host {
+    display: block;
+    height: 100vh;
+    overflow-x: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-container {
+    display: flex;
+    min-height: 100vh;
+    background: #fff;
+    flex-wrap: wrap;
+    /* For mobile responsiveness */
+}
+
+/* Left Pane (Blue) */
+.left-pane {
+    flex: 1;
+    min-width: 300px;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 2rem;
+    text-align: center;
+}
+
+.welcome-text h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.logo-circle {
+    width: 120px;
+    height: 120px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.logo-icon {
+    font-size: 2rem;
+    color: #0d6efd;
+}
+
+/* Cloud/Wave Divider Logic */
+.cloud-divider {
+    position: absolute;
+    top: 0;
+    right: -1px;
+    /* Overlap slightly */
+    bottom: 0;
+    width: 50px;
+    background-image: radial-gradient(circle at 0px 50%, white 25px, transparent 26px);
+    background-size: 50px 80px;
+    background-repeat: repeat-y;
+}
+
+/* Right Pane (White Form) */
+.right-pane {
+    flex: 1.2;
+    min-width: 350px;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+/* Inputs */
+.form-floating label {
+    padding-left: 0;
+    color: #999;
+}
+
+.form-control,
+.form-select {
+    border: none;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0;
+    padding-left: 0;
+    padding-bottom: 10px;
+    box-shadow: none !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-bottom: 1px solid #0d6efd;
+}
+
+/* New Pill Buttons */
+.btn-pill {
+    border-radius: 50px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 100%;
+}
+
+.btn-primary-pill {
+    background: #0d6efd;
+    border: none;
+    color: white;
+}
+
+.btn-primary-pill:hover {
+    background: #0b5ed7;
+}
+
+.btn-outline-pill {
+    border: 2px solid #ddd;
+    color: #666;
+    background: white;
+    margin-top: 1rem;
+}
+
+.btn-outline-pill:hover {
+    border-color: #999;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .cloud-divider {
+        display: none;
+        /* Hide expensive divider on mobile or change to horizontal */
+    }
+
+    .left-pane {
+        padding: 3rem 1rem;
+    }
 }
