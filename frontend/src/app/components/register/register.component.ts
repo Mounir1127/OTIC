@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LocationService } from '../../services/location.service';
+import { TUNISIA_DATA } from '../../data/tunisia-data';
 
 @Component({
     selector: 'app-register',
@@ -26,7 +27,7 @@ export class RegisterComponent {
         }
     };
     error = '';
-    governorates: any[] = [];
+    governorates: any[] = TUNISIA_DATA;
     delegations: any[] = [];
 
     constructor(
@@ -34,12 +35,21 @@ export class RegisterComponent {
         private locationService: LocationService,
         private router: Router
     ) {
+        // Optimistically set default data first
+        this.governorates = TUNISIA_DATA;
+
+        // Attempt to fetch fresh data, but don't clear existing if it fails
         this.locationService.getGovernorates().subscribe({
             next: (data) => {
-                console.log('Governorates loaded:', data);
-                this.governorates = data;
+                if (data && data.length > 0) {
+                    console.log('Governorates loaded from server:', data);
+                    this.governorates = data;
+                }
             },
-            error: (err) => console.error('Failed to load locations', err)
+            error: (err) => {
+                console.warn('Backend unavailable, using local Tunisia data:', err);
+                // No action needed, defaults are already set
+            }
         });
     }
 
@@ -61,7 +71,7 @@ export class RegisterComponent {
         this.authService.register(this.user).subscribe({
             next: (res) => {
                 localStorage.setItem('token', res.token);
-                this.router.navigate(['/']);
+                this.router.navigate(['/dashboard']);
             },
             error: (err) => {
                 this.error = err.error.msg || 'Registration failed';

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -17,6 +17,7 @@ app.get('/', (req, res) => res.send('API Running'));
 // Define Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/locations', require('./routes/locations'));
+app.use('/api/reclamations', require('./routes/reclamations'));
 
 const PORT = process.env.PORT || 4000;
 
