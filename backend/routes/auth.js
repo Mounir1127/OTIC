@@ -8,6 +8,13 @@ const User = require("../models/User");
 // @desc    Register user
 // @access  Public
 router.post("/register", async (req, res) => {
+    // Check if database is connected
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+        console.error('Database is not connected. Connection state:', mongoose.connection.readyState);
+        return res.status(503).json({ msg: "Database connection is not ready. Please try again later or check server configuration." });
+    }
+
     const { nom, prenom, email, telephone, password, adresse } = req.body;
 
     try {
@@ -98,6 +105,13 @@ router.post("/register", async (req, res) => {
 // @desc    Authenticate user & get token
 // @access  Public
 router.post("/login", async (req, res) => {
+    // Check if database is connected
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+        console.error('Database is not connected. Connection state:', mongoose.connection.readyState);
+        return res.status(503).json({ msg: "Database connection is not ready. Please try again later or check server configuration." });
+    }
+
     const { identifier, password } = req.body;
 
     try {
