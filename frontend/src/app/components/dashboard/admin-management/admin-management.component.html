@@ -1,0 +1,55 @@
+<div class="admin-container fade-in">
+  <div class="header-section text-center mb-5">
+    <div class="admin-badge mb-3">
+      <i class="bi bi-shield-lock-fill"></i> Super Admin
+    </div>
+    <h2>Centre de Contrôle OTIC</h2>
+    <p class="text-muted">Gérez les comptes, supervisez l'activité et configurez la sécurité de la plateforme.</p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid mb-5">
+    <div class="stat-card" routerLink="/dashboard/admin-management/users">
+      <div class="stat-icon users"><i class="bi bi-people"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Total Utilisateurs</span>
+        <span class="stat-value">{{stats.totalUsers}}</span>
+      </div>
+      <i class="bi bi-chevron-right ms-auto opacity-50"></i>
+    </div>
+    <div class="stat-card" routerLink="/dashboard/admin-management/users">
+      <div class="stat-icon admins"><i class="bi bi-shield-lock"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Administrateurs</span>
+        <span class="stat-value">{{stats.totalAdmins}}</span>
+      </div>
+      <i class="bi bi-chevron-right ms-auto opacity-50"></i>
+    </div>
+    <div class="stat-card" routerLink="/dashboard/admin-management/users">
+      <div class="stat-icon simple"><i class="bi bi-person"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Consommateurs</span>
+        <span class="stat-value">{{stats.totalConsumers}}</span>
+      </div>
+      <i class="bi bi-chevron-right ms-auto opacity-50"></i>
+    </div>
+  </div>
+
+  <div class="quick-actions-grid">
+    <div class="action-card" routerLink="/dashboard/admin-management/add">
+      <div class="action-icon"><i class="bi bi-person-plus"></i></div>
+      <h4>Ajouter un Admin</h4>
+      <p>Créez de nouveaux profils administratifs</p>
+    </div>
+    <div class="action-card" routerLink="/dashboard/admin-management/security">
+      <div class="action-icon security"><i class="bi bi-key"></i></div>
+      <h4>Sécurité</h4>
+      <p>Modifiez votre mot de passe et accès</p>
+    </div>
+    <div class="action-card" routerLink="/dashboard/admin-management/users">
+      <div class="action-icon logs"><i class="bi bi-list-check"></i></div>
+      <h4>Utilisateurs</h4>
+      <p>Gérez la liste complète des membres</p>
+    </div>
+  </div>
+</div>

@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const mongoose = require("mongoose");
 
 // @route   POST api/auth/register
 // @desc    Register user
@@ -113,7 +114,8 @@ router.post("/login", async (req, res) => {
     }
 
     const { identifier, password } = req.body;
-
+    console.log('--- LOGIN REQUEST ---');
+    console.log('Identifier:', identifier);
     try {
         // Check if identifier matches email or telephone
         console.log('Login Attempt for identifier:', identifier);
@@ -145,12 +147,20 @@ router.post("/login", async (req, res) => {
             { expiresIn: 360000 },
             (err, token) => {
                 if (err) throw err;
-                res.json({ token });
+                res.json({
+                    token,
+                    user: {
+                        id: user.id,
+                        role: user.role,
+                        email: user.email
+                    }
+                });
             }
         );
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Server error");
+        console.error('--- LOGIN ERROR ---');
+        console.error(err);
+        res.status(500).json({ msg: "Server error", error: err.message });
     }
 });
 
@@ -165,6 +175,31 @@ router.get("/me", require("../middleware/auth"), async (req, res) => {
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Server error");
+    }
+});
+
+// @route   POST api/auth/change-password
+// @desc    Change user password
+// @access  Private
+router.post("/change-password", require("../middleware/auth"), async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+        const user = await User.findById(req.user.id);
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ msg: "Mot de passe actuel incorrect" });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+
+        await user.save();
+        res.json({ msg: "Mot de passe changé avec succès" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Erreur serveur");
     }
 });
 

@@ -1,0 +1,66 @@
+<div class="admin-container fade-in">
+    <div class="header-section">
+        <h2>Liste des Utilisateurs</h2>
+        <p class="text-muted">Supervisez tous les comptes inscrits sur la plateforme</p>
+        <div *ngIf="errorMsg" class="alert alert-danger mt-3">{{errorMsg}}</div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card clickable" [class.active]="selectedFilter === 'all'" (click)="setFilter('all')">
+            <div class="stat-icon users"><i class="bi bi-people"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Total Utilisateurs</span>
+                <span class="stat-value">{{stats.totalUsers}}</span>
+            </div>
+        </div>
+        <div class="stat-card clickable" [class.active]="selectedFilter === 'admin'" (click)="setFilter('admin')">
+            <div class="stat-icon admins"><i class="bi bi-shield-lock"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Administrateurs</span>
+                <span class="stat-value">{{stats.totalAdmins}}</span>
+            </div>
+        </div>
+        <div class="stat-card clickable" [class.active]="selectedFilter === 'consommateur_simple'"
+            (click)="setFilter('consommateur_simple')">
+            <div class="stat-icon simple"><i class="bi bi-person"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Consommateurs</span>
+                <span class="stat-value">{{stats.totalConsumers}}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="card list-users-card">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom & Prénom</th>
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Région / Ville</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let user of filteredUsers">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-2">{{user.prenom[0]}}{{user.nom[0]}}</div>
+                                {{user.prenom}} {{user.nom}}
+                            </div>
+                        </td>
+                        <td>{{user.email}}</td>
+                        <td>
+                            <span class="role-badge" [ngClass]="user.role">
+                                {{user.role}}
+                            </span>
+                        </td>
+                        <td>{{user.adresse?.region}} / {{user.adresse?.ville}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

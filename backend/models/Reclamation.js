@@ -42,8 +42,13 @@ const ReclamationSchema = new mongoose.Schema({
     },
     statut: {
         type: String,
-        enum: ['en_attente', 'en_cours', 'traitee', 'rejete'],
+        enum: ['en_attente', 'en_cours', 'traitee', 'rejete', 'demande_complement'],
         default: 'en_attente'
+    },
+    conventionne: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+        default: null
     },
     dateCreation: {
         type: Date,

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { ReclamationService } from '../../../services/reclamation.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-dashboard-home',
@@ -152,9 +153,21 @@ export class DashboardHomeComponent implements OnInit {
   };
   recentReclamations: any[] = [];
 
-  constructor(private reclamationService: ReclamationService) { }
+  constructor(
+    private reclamationService: ReclamationService,
+    private authService: AuthService,
+    private router: Router
+  ) { }
 
   ngOnInit() {
+    this.authService.currentUser$.subscribe(user => {
+      if (user?.role === 'super_admin') {
+        this.router.navigate(['/dashboard/admin-management']);
+      } else if (user?.role === 'admin') {
+        this.router.navigate(['/dashboard/admin-home']);
+      }
+    });
+
     this.reclamationService.getMyReclamations().subscribe({
       next: (data: any) => {
         if (data) {

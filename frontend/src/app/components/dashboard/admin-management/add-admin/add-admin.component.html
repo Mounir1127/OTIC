@@ -1,0 +1,71 @@
+<div class="admin-container fade-in">
+    <div class="header-section">
+        <h2>Ajouter un Administrateur</h2>
+        <p class="text-muted">Créez de nouveaux comptes administratifs pour gérer la plateforme</p>
+    </div>
+
+    <div class="card create-admin-card">
+        <div class="card-header">
+            <i class="bi bi-person-plus-fill"></i>
+            <h3>Nouveau Profil Administrateur</h3>
+        </div>
+
+        <form (ngSubmit)="onSubmit()" #adminForm="ngForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nom</label>
+                    <input type="text" [(ngModel)]="newAdmin.nom" name="nom" required placeholder="Ex: Ben Salah">
+                </div>
+                <div class="form-group">
+                    <label>Prénom</label>
+                    <input type="text" [(ngModel)]="newAdmin.prenom" name="prenom" required placeholder="Ex: Ahmed">
+                </div>
+                <div class="form-group">
+                    <label>Email professionnel</label>
+                    <input type="email" [(ngModel)]="newAdmin.email" name="email" required placeholder="admin@otic.tn">
+                </div>
+                <div class="form-group">
+                    <label>Numéro de téléphone</label>
+                    <input type="text" [(ngModel)]="newAdmin.telephone" name="telephone" required
+                        placeholder="+216 ...">
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe temporaire</label>
+                    <input type="password" [(ngModel)]="newAdmin.password" name="password" required
+                        placeholder="••••••••">
+                </div>
+
+                <div class="form-group">
+                    <label>Gouvernorat</label>
+                    <select [(ngModel)]="newAdmin.adresse.region" name="region" (change)="onRegionChange()" required>
+                        <option value="">Sélectionner une région</option>
+                        <option *ngFor="let g of governorates" [value]="g.governorate">{{g.governorate}}</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Délégation / Ville</label>
+                    <select [(ngModel)]="newAdmin.adresse.ville" name="ville" (change)="onCityChange()" required>
+                        <option value="">Sélectionner une ville</option>
+                        <option *ngFor="let d of delegations" [value]="d.name">{{d.name}}</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Code Postal</label>
+                    <input type="text" [(ngModel)]="newAdmin.adresse.codePostal" name="codePostal" readonly
+                        placeholder="Calculé automatiquement">
+                </div>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" [disabled]="!adminForm.form.valid" class="btn btn-primary btn-hover-rise w-100">
+                    <i class="bi bi-shield-plus me-2"></i> Créer le compte administrateur
+                </button>
+            </div>
+
+            <div *ngIf="successMsg" class="alert alert-success mt-3">{{successMsg}}</div>
+            <div *ngIf="errorMsg" class="alert alert-danger mt-3">{{errorMsg}}</div>
+        </form>
+    </div>
+</div>

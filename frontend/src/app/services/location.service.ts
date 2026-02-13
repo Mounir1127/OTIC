@@ -13,4 +13,8 @@ export class LocationService {
     getGovernorates(): Observable<any[]> {
         return this.http.get<any[]>(this.apiUrl);
     }
+
+    getDelegations(governorate: string): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/${governorate}`);
+    }
 }

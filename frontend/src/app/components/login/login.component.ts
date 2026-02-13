@@ -93,7 +93,13 @@ export class LoginComponent {
     this.authService.login(this.credentials).subscribe({
       next: (res) => {
         localStorage.setItem('token', res.token);
-        this.router.navigate(['/dashboard']);
+
+        // Redirect based on role
+        if (res.user && res.user.role === 'super_admin') {
+          this.router.navigate(['/dashboard/admin-management']);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
       },
       error: (err) => {
         this.error = err.error?.msg || 'Échec de la connexion';
