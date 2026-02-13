@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { ReclamationService } from '../../../services/reclamation.service';
 
 @Component({
@@ -20,7 +21,7 @@ import { ReclamationService } from '../../../services/reclamation.service';
             </div>
             <div class="d-flex gap-3">
                 <div class="input-group shadow-sm" style="width: 250px;">
-                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-white border-end-0 text-muted" [ngClass]="{'bg-dark-input': true}"><i class="bi bi-search"></i></span>
                     <input type="text" class="form-control border-start-0 ps-0" placeholder="Rechercher..." [(ngModel)]="searchTerm" (input)="filterReclamations()">
                 </div>
                 <a routerLink="/dashboard/reclamation/new" class="btn btn-primary d-flex align-items-center shadow-sm px-4 py-2 rounded-pill">
@@ -34,13 +35,13 @@ import { ReclamationService } from '../../../services/reclamation.service';
         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
+                    <thead class="bg-light-subtle text-primary">
                         <tr>
-                            <th class="py-3 ps-4 text-uppercase text-muted small fw-bold ls-1 border-0">Code Suivi</th>
-                            <th class="py-3 text-uppercase text-muted small fw-bold ls-1 border-0">Sujet / Type</th>
-                            <th class="py-3 text-uppercase text-muted small fw-bold ls-1 border-0">Date</th>
-                            <th class="py-3 text-uppercase text-muted small fw-bold ls-1 border-0">Statut</th>
-                            <th class="py-3 pe-4 text-end text-uppercase text-muted small fw-bold ls-1 border-0">Actions</th>
+                            <th class="py-3 ps-4 text-uppercase small fw-bold ls-1 border-0">Code Suivi</th>
+                            <th class="py-3 text-uppercase small fw-bold ls-1 border-0">Sujet / Type</th>
+                            <th class="py-3 text-uppercase small fw-bold ls-1 border-0">Date</th>
+                            <th class="py-3 text-uppercase small fw-bold ls-1 border-0">Statut</th>
+                            <th class="py-3 pe-4 text-end text-uppercase small fw-bold ls-1 border-0">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,7 +84,7 @@ import { ReclamationService } from '../../../services/reclamation.service';
                         </tr>
                         
                         <!-- Empty State -->
-                        <tr *ngIf="reclamations.length === 0 && !loading">
+                        <tr *ngIf="reclamations.length === 0">
                             <td colspan="5" class="text-center py-5">
                                 <i class="bi bi-inbox fs-1 text-muted opacity-50 mb-3 d-block"></i>
                                 <h6 class="fw-bold text-muted">Aucune réclamation trouvée</h6>
@@ -92,10 +93,6 @@ import { ReclamationService } from '../../../services/reclamation.service';
                         </tr>
                     </tbody>
                 </table>
-            </div>
-            
-            <div *ngIf="loading" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status"></div>
             </div>
         </div>
 
@@ -112,6 +109,8 @@ import { ReclamationService } from '../../../services/reclamation.service';
     .bg-success-subtle { background-color: #dcfce7; }
     .bg-danger-subtle { background-color: #fee2e2; }
     .fade-in { animation: fadeIn 0.5s ease-out; }
+    [data-theme="dark"] .bg-white { background-color: var(--bg-card) !important; border-color: var(--border-color) !important; }
+    [data-theme="dark"] .text-dark { color: #f1f5f9 !important; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   `]
 
@@ -122,20 +121,27 @@ export class ReclamationListComponent implements OnInit {
     loading = true;
     searchTerm = '';
 
-    constructor(private reclamationService: ReclamationService) { }
+    constructor(
+        private reclamationService: ReclamationService,
+        private cdr: ChangeDetectorRef
+    ) { }
 
-    ngOnInit(): void {
-        this.reclamationService.getMyReclamations().subscribe({
-            next: (data) => {
-                this.allReclamations = data;
-                this.reclamations = data;
-                this.loading = false;
-            },
-            error: (err) => {
-                console.error(err);
-                this.loading = false;
-            }
-        });
+    async ngOnInit() {
+        this.loading = true;
+        this.cdr.detectChanges();
+
+        try {
+            console.log('📡 Fetching my reclamations...');
+            const data = await firstValueFrom(this.reclamationService.getMyReclamations());
+            this.allReclamations = data || [];
+            this.reclamations = [...this.allReclamations];
+            console.log('✅ Reclamations loaded:', this.reclamations.length);
+        } catch (err) {
+            console.error('❌ Error fetching reclamations:', err);
+        } finally {
+            this.loading = false;
+            this.cdr.detectChanges();
+        }
     }
 
     filterReclamations() {

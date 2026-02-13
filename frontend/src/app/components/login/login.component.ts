@@ -72,7 +72,6 @@ import { AuthService } from '../../services/auth.service';
     </div>
   `,
   styles: [`
-    .bg-light-subtle { background-color: #f1f5f9; }
     .ls-1 { letter-spacing: 1px; }
     .btn-hover-rise { transition: transform 0.2s, box-shadow 0.2s; }
     .btn-hover-rise:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2) !important; }

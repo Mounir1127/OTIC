@@ -1,0 +1,66 @@
+[
+  {
+    "_id": "69889aec983f63ece36c91bf",
+    "nom": "jaziri",
+    "prenom": "aya",
+    "email": "jaziriaya9@gmail.com",
+    "telephone": "12547852",
+    "password": "$2b$10$xVhLCouc5xhSh4rexkJY2uZBSnv1c.5r3c7Np.4Qz2frH4EIG.e5y",
+    "role": "consommateur_simple",
+    "photoProfil": null,
+    "adresse": {
+      "ville": "Ras Jebel",
+      "region": "Bizerte",
+      "codePostal": "7070"
+    },
+    "__v": 0
+  },
+  {
+    "_id": "69889c2c93542da1f8861226",
+    "nom": "Belkhouja",
+    "prenom": "Mounir",
+    "email": "mounirbelkhouja4@gmail.com",
+    "telephone": "+21690475540",
+    "password": "$2b$10$uw7O3Sk2GzAs5GTN9zfnMesl8deBWIdlJUuEIt3.pFpnxsR9.tWVG",
+    "role": "consommateur_simple",
+    "photoProfil": null,
+    "adresse": {
+      "ville": "Ras Jebel",
+      "region": "Bizerte",
+      "codePostal": "7070"
+    },
+    "__v": 0
+  },
+  {
+    "_id": "69889e1405291d5c612b3bb4",
+    "nom": "Admin",
+    "prenom": "Super",
+    "email": "superadmin@otic.tn",
+    "telephone": "00000000",
+    "password": "$2b$10$0crmJoTPBnxviMb4d9TS3ufFVvN4HR5YM1cTn00YxbLESk7s9zBBO",
+    "role": "super_admin",
+    "photoProfil": null,
+    "adresse": {
+      "ville": "Tunis",
+      "region": "Tunis",
+      "codePostal": "1000"
+    },
+    "__v": 0
+  },
+  {
+    "_id": "69889f9393542da1f8861230",
+    "nom": "Belkhouja",
+    "prenom": "Mounir",
+    "email": "m@gmail.com",
+    "telephone": "+21690475540",
+    "password": "$2b$10$HozAmqVtDhZUbvRJPbvMnO.n.EypIXW2Io0YC6DZA6JM5Yp1mdB0a",
+    "role": "consommateur_simple",
+    "photoProfil": null,
+    "adresse": {
+      "ville": "Ras Jebel",
+      "region": "Bizerte",
+      "codePostal": "7070"
+    },
+    "__v": 0
+  }
+]

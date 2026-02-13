@@ -171,6 +171,7 @@ router.post("/login", async (req, res) => {
 router.get("/me", require("../middleware/auth"), async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select("-password");
+        console.log('🔍 GET /api/auth/me - Returning user:', { id: user._id, email: user.email, name: user.nom });
         res.json(user);
     } catch (err) {
         console.error(err.message);

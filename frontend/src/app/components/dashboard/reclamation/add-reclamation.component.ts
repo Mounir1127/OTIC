@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ReclamationService } from '../../../services/reclamation.service';
 import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamation-taxonomy';
 
@@ -10,11 +11,11 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div class="row justify-content-center">
+    <div class="row justify-content-center fade-in">
       <div class="col-lg-10 col-xl-9">
         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
           <!-- Wizard Header -->
-          <div class="card-header bg-white border-0 pt-4 px-4 px-md-5 pb-0 d-flex justify-content-between align-items-center">
+          <div class="card-header premium-header border-0 pt-4 px-4 px-md-5 pb-0 d-flex justify-content-between align-items-center">
             <div>
                 <h4 class="mb-1 text-primary fw-bold">Nouvelle Réclamation</h4>
                 <p class="text-muted small mb-0 fw-medium">Suivez les étapes pour soumettre votre demande.</p>
@@ -25,17 +26,15 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
             
             <!-- Visual Step Indicator -->
             <div class="d-flex justify-content-between position-relative mb-5 mt-2 px-md-4">
-                <div class="position-absolute top-50 start-0 translate-middle-y z-n1 bg-light rounded-pill" style="height: 4px; width: 100%;"></div>
+                <div class="position-absolute top-50 start-0 translate-middle-y z-n1 bg-light-subtle rounded-pill" style="height: 4px; width: 100%;"></div>
                 <div class="position-absolute top-50 start-0 translate-middle-y z-n1 bg-accent transition-width" style="height: 4px; transition: width 0.4s ease;" [style.width.%]="((step-1)/4)*100"></div>
                 
-                <div *ngFor="let s of [1,2,3,4,5]; let i = index" class="d-flex flex-column align-items-center z-1 bg-white px-2 cursor-default">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center border-2 transition-all shadow-sm" 
+                <div *ngFor="let s of [1,2,3,4,5]; let i = index" class="d-flex flex-column align-items-center z-1 bg-step px-2 cursor-default">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center border-2 transition-all shadow-sm step-circle" 
                          [class.bg-accent]="step >= s" 
                          [class.border-accent]="step >= s"
                          [class.text-white]="step >= s"
-                         [class.bg-white]="step < s"
-                         [class.text-muted]="step < s"
-                         [class.border-light-subtle]="step < s"
+                         [class.step-inactive]="step < s"
                          style="width: 48px; height: 48px; border: 2px solid;">
                         <i class="bi fs-5" 
                            [class.bi-tag-fill]="s===1" 
@@ -57,7 +56,7 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                 </div>
                 <h2 class="fw-bold mb-3">Réclamation Enregistrée !</h2>
                 <p class="lead text-muted mb-4">Votre demande a été transmise avec succès.</p>
-                <div class="d-inline-block bg-light rounded-4 p-4 border border-dashed mb-4">
+                <div class="d-inline-block bg-light-subtle rounded-4 p-4 border border-dashed mb-4">
                     <small class="text-uppercase text-muted fw-bold ls-1 d-block mb-2">Code de suivi</small>
                     <span class="display-6 fw-bold text-dark user-select-all font-monospace">{{ successTrackingCode }}</span>
                 </div>
@@ -78,8 +77,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                         <div class="row g-3">
                             <div class="col-sm-6">
                                 <input type="radio" class="btn-check" name="type" id="typeProduit" value="Produit" [(ngModel)]="reclamation.type" required>
-                                <label class="btn btn-outline-light text-dark border w-100 p-3 text-start d-flex align-items-center rounded-3 hover-shadow" for="typeProduit">
-                                    <div class="icon-box bg-light text-primary rounded-circle p-2 me-3"><i class="bi bi-box-seam fs-5"></i></div>
+                                <label class="btn btn-outline-light text-dark border w-100 p-3 text-start d-flex align-items-center rounded-3 hover-shadow type-card" for="typeProduit">
+                                    <div class="icon-box bg-light-subtle text-primary rounded-circle p-2 me-3"><i class="bi bi-box-seam fs-5"></i></div>
                                     <div class="d-flex flex-column">
                                         <span class="fw-bold">Produit</span>
                                         <small class="text-muted">Bien de consommation</small>
@@ -88,8 +87,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                             </div>
                             <div class="col-sm-6">
                                 <input type="radio" class="btn-check" name="type" id="typeService" value="Service" [(ngModel)]="reclamation.type">
-                                <label class="btn btn-outline-light text-dark border w-100 p-3 text-start d-flex align-items-center rounded-3 hover-shadow" for="typeService">
-                                    <div class="icon-box bg-light text-primary rounded-circle p-2 me-3"><i class="bi bi-gear fs-5"></i></div>
+                                <label class="btn btn-outline-light text-dark border w-100 p-3 text-start d-flex align-items-center rounded-3 hover-shadow type-card" for="typeService">
+                                    <div class="icon-box bg-light-subtle text-primary rounded-circle p-2 me-3"><i class="bi bi-gear fs-5"></i></div>
                                     <div class="d-flex flex-column">
                                         <span class="fw-bold">Service</span>
                                         <small class="text-muted">Prestation immatérielle</small>
@@ -124,7 +123,7 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                         <label class="form-label mb-3">Nature de la réclamation (Choix multiples)</label>
                         <div class="row g-3">
                             <div class="col-md-4 col-sm-6" *ngFor="let nat of naturesList">
-                                <div class="form-check custom-check p-3 border rounded-3 bg-white h-100 position-relative">
+                                <div class="form-check custom-check p-3 border rounded-3 bg-card h-100 position-relative">
                                     <input class="form-check-input position-absolute top-50 end-0 translate-middle-y me-3" type="checkbox" [value]="nat" 
                                         (change)="onNatureChange($event, nat)"
                                         [checked]="reclamation.natures.includes(nat)" id="check-{{nat}}">
@@ -166,7 +165,7 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                         <div class="list-group list-group-flush">
                             <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-3 border-bottom" *ngFor="let file of reclamation.preuves">
                                 <div class="d-flex align-items-center">
-                                    <div class="icon-box bg-white border rounded p-2 me-3"><i class="bi bi-file-earmark-text text-primary"></i></div>
+                                    <div class="icon-box bg-light-subtle border rounded p-2 me-3"><i class="bi bi-file-earmark-text text-primary"></i></div>
                                     <span class="fw-medium">{{ file }}</span>
                                 </div>
                                 <span class="badge bg-success-subtle text-success rounded-pill px-3"><i class="bi bi-check2 me-1"></i> OK</span>
@@ -182,7 +181,7 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                     <div class="mb-4">
                         <label class="form-label">Nom de l'enseigne, entreprise ou organisme</label>
                         <div class="input-group input-group-lg">
-                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                            <span class="input-group-text bg-light-subtle border-end-0 text-muted"><i class="bi bi-search"></i></span>
                             <input type="text" class="form-control border-start-0 ps-0" name="operateur" [(ngModel)]="reclamation.operateur" placeholder="Ex: Magasin Général, Steg, Ooredoo..." required>
                         </div>
                         <div class="form-text mt-2">Essayez d'être précis sur le nom et la localisation si possible.</div>
@@ -200,7 +199,7 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                         </div>
                     </div>
 
-                    <div class="bg-light rounded-4 p-4 border form-review">
+                    <div class="bg-light-subtle rounded-4 p-4 border form-review">
                         <dl class="row mb-0">
                             <dt class="col-sm-4 text-muted text-uppercase small fw-bold mb-1">Type</dt>
                             <dd class="col-sm-8 mb-4 fw-bold">{{ reclamation.type }}</dd>
@@ -239,12 +238,10 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                         Suivant
                     </button>
 
-                    <button type="submit" class="btn btn-success btn-lg px-5 shadow-lg rounded-pill fw-bold text-uppercase ls-1" *ngIf="step === 5" [disabled]="loading">
-                        <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                    <button type="submit" class="btn btn-success btn-lg px-5 shadow-lg rounded-pill fw-bold text-uppercase ls-1" *ngIf="step === 5">
                         Confirmer et Envoyer
                     </button>
                 </div>
-
             </form>
           </div>
         </div>
@@ -266,6 +263,22 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
     .upload-zone:hover { border-color: #d97706 !important; background-color: #fffbeb !important; }
     .fade-in { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Step Circle Styles */
+    .bg-step { background-color: #fff; }
+    .step-inactive { background-color: #fff; color: #6c757d; border-color: #e2e8f0; }
+
+    /* Dark Mode Overrides */
+    [data-theme="dark"] .bg-step { background-color: var(--bg-card); }
+    [data-theme="dark"] .step-inactive { background-color: var(--bg-card); color: #94a3b8; border-color: #334155; }
+    [data-theme="dark"] .type-card { background-color: transparent; border-color: #334155; }
+    [data-theme="dark"] .type-card:hover { border-color: var(--accent-color) !important; background-color: rgba(251, 191, 36, 0.05); }
+    [data-theme="dark"] .custom-check { background-color: transparent; border-color: #334155; }
+    [data-theme="dark"] .custom-check:hover { background-color: rgba(251, 191, 36, 0.05); border-color: var(--accent-color) !important; }
+    [data-theme="dark"] .bg-light-subtle { background-color: rgba(255,255,255,0.03) !important; }
+    [data-theme="dark"] .text-dark { color: #f1f5f9 !important; }
+    [data-theme="dark"] .alert-light { background-color: rgba(255,255,255,0.03); border-color: transparent; color: #f1f5f9; }
+    [data-theme="dark"] .upload-zone:hover { background-color: rgba(251, 191, 36, 0.05) !important; }
   `]
 })
 export class AddReclamationComponent {
@@ -288,7 +301,11 @@ export class AddReclamationComponent {
     successTrackingCode = '';
     errorMessage = '';
 
-    constructor(private reclamationService: ReclamationService) { }
+    constructor(
+        private reclamationService: ReclamationService,
+        private ngZone: NgZone,
+        private cdr: ChangeDetectorRef
+    ) { }
 
     onSectorChange() {
         const selected = this.sectors.find(s => s.name === this.reclamation.secteur);
@@ -330,20 +347,21 @@ export class AddReclamationComponent {
         if (this.step > 1) this.step--;
     }
 
-    submit() {
-        this.loading = true;
+    async submit() {
         this.errorMessage = '';
+        console.log('🚀 Direct Submit attempt...');
 
-        this.reclamationService.createReclamation(this.reclamation).subscribe({
-            next: (res) => {
-                this.successTrackingCode = res.trackingCode; // Mocked or Real
-                this.loading = false;
-            },
-            error: (err) => {
-                this.errorMessage = "Une erreur technique est survenue.";
-                this.loading = false;
-            }
-        });
+        try {
+            const res = await firstValueFrom(this.reclamationService.createReclamation(this.reclamation));
+            console.log('✅ Response received:', res);
+
+            this.successTrackingCode = res.trackingCode || res._id || `REC-${Date.now().toString().slice(-4)}`;
+            this.cdr.detectChanges();
+        } catch (err: any) {
+            console.error('❌ Submission failed:', err);
+            this.errorMessage = err.error?.msg || err.message || "Une erreur est survenue lors de l'envoi.";
+            this.cdr.detectChanges();
+        }
     }
 
     resetForm() {

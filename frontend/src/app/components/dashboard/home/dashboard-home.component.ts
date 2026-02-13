@@ -85,7 +85,7 @@ import { AuthService } from '../../../services/auth.service';
       <div class="row g-4">
          <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-0 py-4 px-4 d-flex justify-content-between align-items-center">
+                <div class="card-header premium-header border-0 py-4 px-4 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">Activité Récente</h5>
                     <a routerLink="/dashboard/reclamation" class="btn btn-light btn-sm rounded-pill px-3">Tout voir</a>
                 </div>
@@ -138,8 +138,6 @@ import { AuthService } from '../../../services/auth.service';
   `,
   styles: [`
     .ls-1 { letter-spacing: 1px; }
-    .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
-    .card-hover:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
     .fade-in { animation: fadeIn 0.5s ease-out; }
     .backdrop-blur { backdrop-filter: blur(4px); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

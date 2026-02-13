@@ -12,6 +12,12 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// Log all requests for debugging
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 app.get('/', (req, res) => res.send('API Running'));
 
 // Define Routes

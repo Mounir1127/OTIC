@@ -33,6 +33,7 @@ export class AuthService {
 
     getProfile(): Observable<any> {
         const token = localStorage.getItem('token');
+        console.log('📡 Fetching profile from:', `${this.apiUrl}/me`);
         return this.http.get(`${this.apiUrl}/me`, {
             headers: { 'x-auth-token': token || '' }
         }).pipe(
