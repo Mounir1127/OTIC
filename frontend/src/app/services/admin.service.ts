@@ -1,12 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AdminService {
-    private apiUrl = 'http://localhost:4000/api/admin';
+    private apiUrl = 'http://localhost:5000/api/admin';
+
+    private refreshUsersSource = new Subject<void>();
+    refreshUsers$ = this.refreshUsersSource.asObservable();
 
     constructor(private http: HttpClient) { }
 
@@ -37,11 +40,57 @@ export class AdminService {
         return this.http.get(`${this.apiUrl}/reclamations/complements`, { headers: this.getHeaders() });
     }
 
+    getAllReclamations(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/reclamations/all`, { headers: this.getHeaders() });
+    }
+
     assignReclamation(reclamationId: string, conventionneId: string): Observable<any> {
         return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/assign`, { conventionneId }, { headers: this.getHeaders() });
     }
 
     createAdmin(adminData: any): Observable<any> {
         return this.http.post(`${this.apiUrl}/create-admin`, adminData, { headers: this.getHeaders() });
+    }
+
+    deleteUser(id: string): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/user/${id}`, { headers: this.getHeaders() });
+    }
+
+    updateUserRole(id: string, role: string): Observable<any> {
+        return this.http.put(`${this.apiUrl}/user/${id}/role`, { role }, { headers: this.getHeaders() });
+    }
+
+    getUserById(id: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/user/${id}`, { headers: this.getHeaders() });
+    }
+
+    updateUser(id: string, userData: any): Observable<any> {
+        return this.http.put(`${this.apiUrl}/user/${id}`, userData, { headers: this.getHeaders() });
+    }
+
+    markAsRead(reclamationId: string): Observable<any> {
+        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/mark-read`, {}, { headers: this.getHeaders() });
+    }
+
+    updateReclamationStatus(reclamationId: string, statut: string, comment?: string): Observable<any> {
+        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/status`, { statut, comment }, { headers: this.getHeaders() });
+    }
+
+    getStats(filters: any = {}): Observable<any> {
+        let params = '';
+        if (filters.startDate) params += `&startDate=${filters.startDate}`;
+        if (filters.endDate) params += `&endDate=${filters.endDate}`;
+        if (filters.region) params += `&region=${filters.region}`;
+        if (filters.consumerType) params += `&consumerType=${filters.consumerType}`;
+
+        if (params) {
+            params = '?' + params.substring(1);
+        }
+
+        return this.http.get(`${this.apiUrl}/stats${params}`, { headers: this.getHeaders() });
+    }
+
+    triggerRefresh() {
+        this.refreshUsersSource.next();
     }
 }

@@ -96,6 +96,8 @@ export class LoginComponent {
         // Redirect based on role
         if (res.user && res.user.role === 'super_admin') {
           this.router.navigate(['/dashboard/admin-management']);
+        } else if (res.user && (res.user.role === 'admin_regional' || res.user.role === 'admin')) {
+          this.router.navigate(['/dashboard/admin-home']);
         } else {
           this.router.navigate(['/dashboard']);
         }

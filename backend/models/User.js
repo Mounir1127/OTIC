@@ -18,6 +18,12 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    cin: {
+        type: String,
+        required: false,
+        unique: false,
+        sparse: true,
+    },
     password: {
         type: String,
         required: true,

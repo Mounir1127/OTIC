@@ -13,9 +13,7 @@ module.exports = async function (req, res, next) {
 
     // Verify token
     try {
-        console.log('Verifying token...');
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-        console.log('Token decoded:', decoded);
 
         // Verify if user exists in DB
         const user = await User.findById(decoded.user.id).select('-password');

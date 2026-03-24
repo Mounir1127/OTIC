@@ -37,22 +37,49 @@ const ReclamationSchema = new mongoose.Schema({
     preuves: [{
         type: String // URLs or filenames
     }],
+    gouvernorat: {
+        type: String
+    },
     operateur: {
         type: String
     },
     statut: {
         type: String,
-        enum: ['en_attente', 'en_cours', 'traitee', 'rejete', 'demande_complement'],
-        default: 'en_attente'
+        enum: ['deposee', 'en_cours', 'affectee_conventionne', 'resolue', 'fermee', 'rejete', 'demande_complement'],
+        default: 'deposee'
     },
     conventionne: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
         default: null
     },
+    history: [{
+        date: { type: Date, default: Date.now },
+        statut: { type: String },
+        action: { type: String },
+        updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
+    }],
+    lu: {
+        type: Boolean,
+        default: false
+    },
+    complainantType: {
+        type: String,
+        enum: ['particulier', 'professionnel'],
+        default: 'particulier'
+    },
+    raison_sociale: {
+        type: String
+    },
+    matricule_fiscal: {
+        type: String
+    },
     dateCreation: {
         type: Date,
         default: Date.now
+    },
+    dateResolution: {
+        type: Date
     }
 });
 

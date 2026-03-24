@@ -1,21 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { LocationService } from '../../../services/location.service';
 import { AuthService } from '../../../services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-admin-management',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterModule],
     templateUrl: './admin-management.component.html',
     styleUrls: ['./admin-management.component.css']
 })
-export class AdminManagementComponent implements OnInit {
+export class AdminManagementComponent implements OnInit, OnDestroy {
     users: any[] = [];
     governorates: any[] = [];
     delegations: any[] = [];
+    private refreshSub: Subscription = new Subscription();
 
     newAdmin = {
         nom: '',
@@ -54,8 +57,23 @@ export class AdminManagementComponent implements OnInit {
     ) { }
 
     ngOnInit() {
+        const cached = localStorage.getItem('otic_admin_stats');
+        if (cached) {
+            try { this.stats = JSON.parse(cached); } catch (e) { }
+        }
+
         this.loadUsers();
         this.loadLocations();
+
+        this.refreshSub.add(
+            this.adminService.refreshUsers$.subscribe(() => {
+                this.loadUsers();
+            })
+        );
+    }
+
+    ngOnDestroy() {
+        this.refreshSub.unsubscribe();
     }
 
     loadUsers() {
@@ -72,6 +90,7 @@ export class AdminManagementComponent implements OnInit {
         this.stats.totalUsers = this.users.length;
         this.stats.totalAdmins = this.users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
         this.stats.totalConsumers = this.users.filter(u => u.role === 'consommateur_simple').length;
+        localStorage.setItem('otic_admin_stats', JSON.stringify(this.stats));
     }
 
     loadLocations() {
@@ -98,7 +117,7 @@ export class AdminManagementComponent implements OnInit {
             next: (res) => {
                 this.successMsg = 'Administrateur créé avec succès !';
                 this.errorMsg = '';
-                this.loadUsers();
+                this.adminService.triggerRefresh();
                 this.resetForm();
             },
             error: (err) => {

@@ -165,7 +165,7 @@ import { Subscription } from 'rxjs';
   `]
 })
 export class ProfileComponent implements OnInit, OnDestroy {
-   user: any = {};
+   user: any = null;
    currentSettings: UserSettings = { darkMode: false, language: 'fr' };
    private subscription: Subscription = new Subscription();
 
@@ -183,12 +183,33 @@ export class ProfileComponent implements OnInit, OnDestroy {
          })
       );
 
+      // Listen to currentUser$ instead of calling getProfile directly here
+      // This ensures we stay in sync with the Sidebar and other components
+      this.subscription.add(
+         this.authService.currentUser$.subscribe(user => {
+            if (user) {
+               this.user = user;
+               // If details are missing, trigger a refresh
+               if (!user.nom || !user.adresse) {
+                  this.refreshProfile();
+               }
+            } else {
+               this.refreshProfile();
+            }
+            this.cdr.detectChanges();
+         })
+      );
+   }
+
+   refreshProfile() {
       this.authService.getProfile().subscribe({
          next: (data) => {
             this.user = data;
             this.cdr.detectChanges();
          },
-         error: (err) => { console.error('❌ Profile Fetch Error:', err); }
+         error: (err) => {
+            console.error('❌ Profile Refresh Error:', err);
+         }
       });
    }
 

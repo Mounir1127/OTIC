@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../../services/admin.service';
@@ -100,6 +100,8 @@ import { AdminService } from '../../../../services/admin.service';
         .stat-value { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
         .avatar-small { width: 35px; height: 35px; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; font-weight: bold; }
         .fade-in { animation: fadeIn 0.4s ease-out; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     `]
 })
@@ -111,24 +113,66 @@ export class AdminHomeComponent implements OnInit {
         complements: 0
     };
 
-    constructor(private adminService: AdminService) { }
+    constructor(
+        private adminService: AdminService,
+        private cdr: ChangeDetectorRef
+    ) { }
 
     ngOnInit() {
+        const cached = localStorage.getItem('otic_admin_home_stats');
+        if (cached) {
+            try { this.stats = JSON.parse(cached); } catch (e) { }
+        }
         this.loadData();
     }
 
     loadData() {
-        this.adminService.getConsumers().subscribe(data => {
-            this.consumers = data.slice(0, 10);
-            this.stats.consumers = data.length;
+        console.log('📡 AdminHome: Loading data...');
+        this.adminService.getConsumers().subscribe({
+            next: (data) => {
+                console.log('✅ AdminHome: Consumers loaded:', data.length);
+                this.consumers = data.slice(0, 10);
+                this.stats.consumers = data.length;
+                localStorage.setItem('otic_admin_home_stats', JSON.stringify(this.stats));
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error('❌ AdminHome: Consumers fetch error:', err);
+                this.consumers = [];
+                this.cdr.detectChanges();
+            }
         });
 
-        this.adminService.getPendingReclamations().subscribe(data => {
-            this.stats.pending = data.length;
+        this.adminService.getPendingReclamations().subscribe({
+            next: (data) => {
+                console.log('✅ AdminHome: Pending loaded:', data.length);
+                this.stats.pending = data.length;
+                localStorage.setItem('otic_admin_home_stats', JSON.stringify(this.stats));
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('❌ AdminHome: Pending fetch error:', err)
         });
 
-        this.adminService.getComplementReclamations().subscribe(data => {
-            this.stats.complements = data.length;
+        this.adminService.getComplementReclamations().subscribe({
+            next: (data) => {
+                console.log('✅ AdminHome: Complements loaded:', data.length);
+                this.stats.complements = data.length;
+                localStorage.setItem('otic_admin_home_stats', JSON.stringify(this.stats));
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error('❌ AdminHome: Complements fetch error:', err)
         });
+    }
+
+    markRead(reclamation: any) {
+        if (!reclamation.lu && reclamation._id) {
+            this.adminService.markAsRead(reclamation._id).subscribe({
+                next: () => {
+                    reclamation.lu = true;
+                    this.cdr.detectChanges();
+                },
+                error: (err) => console.error('Error marking as read:', err)
+            });
+        }
     }
 }

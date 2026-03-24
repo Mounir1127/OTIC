@@ -6,11 +6,15 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class Api {
-  private apiUrl = 'http://localhost:4000';
+  private apiUrl = 'http://localhost:5000';
 
   constructor(private http: HttpClient) { }
 
   getMessage(): Observable<any> {
     return this.http.get(`${this.apiUrl}/`, { responseType: 'text' });
+  }
+
+  getPublicStats(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/api/public/stats`);
   }
 }

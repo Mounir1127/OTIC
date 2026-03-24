@@ -1,0 +1,73 @@
+<div class="edit-container fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Modifier l'utilisateur</h2>
+        <a routerLink="/dashboard/admin-management/users" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <div *ngIf="successMsg" class="alert alert-success">{{successMsg}}</div>
+    <div *ngIf="errorMsg" class="alert alert-danger">{{errorMsg}}</div>
+
+    <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+        <div class="row g-3">
+            <!-- Info Personnelle -->
+            <div class="col-md-6">
+                <label class="form-label">Nom</label>
+                <input type="text" class="form-control" formControlName="nom">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Prénom</label>
+                <input type="text" class="form-control" formControlName="prenom">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" formControlName="email">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Téléphone</label>
+                <input type="tel" class="form-control" formControlName="telephone">
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Rôle</label>
+                <select class="form-select" formControlName="role">
+                    <option value="consommateur_simple">Consommateur Simple</option>
+                    <option value="admin">Administrateur</option>
+                    <option value="super_admin">Super Admin</option>
+                    <option value="conventionne">Conventionné</option>
+                </select>
+            </div>
+
+            <!-- Adresse -->
+            <h5 class="mt-4 mb-3">Adresse</h5>
+            <div class="col-md-4" formGroupName="adresse">
+                <label class="form-label">Région</label>
+                <select class="form-select" formControlName="region" (change)="onRegionSelect()">
+                    <option value="">Sélectionner...</option>
+                    <option *ngFor="let gov of governorates" [value]="gov.governorate">{{gov.governorate}}</option>
+                </select>
+            </div>
+            <div class="col-md-4" formGroupName="adresse">
+                <label class="form-label">Ville</label>
+                <select class="form-select" formControlName="ville" (change)="onCityChange()">
+                    <option value="">Sélectionner...</option>
+                    <option *ngFor="let del of delegations" [value]="del.name">{{del.name}}</option>
+                </select>
+            </div>
+            <div class="col-md-4" formGroupName="adresse">
+                <label class="form-label">Code Postal</label>
+                <input type="text" class="form-control" formControlName="codePostal" readonly>
+            </div>
+
+            <div class="col-12 mt-4 text-end">
+                <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || isLoading">
+                    <i class="bi bi-save"></i> Enregistrer les modifications
+                </button>
+            </div>
+        </div>
+    </form>
+
+
+</div>

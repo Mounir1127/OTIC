@@ -16,11 +16,11 @@ router.post("/register", async (req, res) => {
         return res.status(503).json({ msg: "Database connection is not ready. Please try again later or check server configuration." });
     }
 
-    const { nom, prenom, email, telephone, password, adresse } = req.body;
+    const { nom, prenom, email, telephone, cin, password, adresse } = req.body;
 
     try {
         // Log incoming registration data (without password)
-        console.log('Registration attempt:', { nom, prenom, email, telephone, adresse });
+        console.log('Registration attempt:', { nom, prenom, email, telephone, cin, adresse });
 
         // Validate required fields
         if (!nom || !prenom || !email || !telephone || !password) {
@@ -34,11 +34,11 @@ router.post("/register", async (req, res) => {
             return res.status(400).json({ msg: "Please provide complete address information (ville, region, codePostal)" });
         }
 
-        let user = await User.findOne({ email });
-
+        // Check email OR cin uniqueness
+        let user = await User.findOne({ $or: [{ email }, ...(cin ? [{ cin }] : [])] });
         if (user) {
-            console.log('User already exists:', email);
-            return res.status(400).json({ msg: "User already exists" });
+            if (user.email === email) return res.status(400).json({ msg: "Cet email est déjà utilisé." });
+            if (cin && user.cin === cin) return res.status(400).json({ msg: "Ce numéro CIN est déjà utilisé." });
         }
 
         user = new User({
@@ -46,6 +46,7 @@ router.post("/register", async (req, res) => {
             prenom,
             email,
             telephone,
+            cin: cin || undefined,
             password,
             adresse: {
                 ville: adresse.ville,
@@ -117,10 +118,10 @@ router.post("/login", async (req, res) => {
     console.log('--- LOGIN REQUEST ---');
     console.log('Identifier:', identifier);
     try {
-        // Check if identifier matches email or telephone
+        // Check if identifier matches email, telephone, or CIN
         console.log('Login Attempt for identifier:', identifier);
         let user = await User.findOne({
-            $or: [{ email: identifier }, { telephone: identifier }]
+            $or: [{ email: identifier }, { telephone: identifier }, { cin: identifier }]
         });
 
         if (!user) {

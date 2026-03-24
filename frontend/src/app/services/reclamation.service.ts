@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
     providedIn: 'root'
 })
 export class ReclamationService {
-    private apiUrl = 'http://127.0.0.1:4000/api/reclamations';
+    private apiUrl = 'http://localhost:5000/api/reclamations';
 
     constructor(private http: HttpClient) { }
 
@@ -18,12 +18,9 @@ export class ReclamationService {
     }
 
     createReclamation(reclamation: any): Observable<any> {
-        console.log('🚀 Service: Creating reclamation...', reclamation);
         const token = localStorage.getItem('token');
-        console.log('🔑 Token found:', !!token);
+        const headers = { 'x-auth-token': token || '' };
 
-        return this.http.post(this.apiUrl, reclamation, {
-            headers: { 'x-auth-token': token || '' }
-        });
+        return this.http.post(this.apiUrl, reclamation, { headers });
     }
 }

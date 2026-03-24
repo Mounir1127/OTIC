@@ -9,7 +9,7 @@
 
   <!-- Stats Grid -->
   <div class="stats-grid mb-5">
-    <div class="stat-card" routerLink="/dashboard/admin-management/users">
+    <div class="stat-card clickable" routerLink="/dashboard/admin-management/users" [queryParams]="{filter: 'all'}">
       <div class="stat-icon users"><i class="bi bi-people"></i></div>
       <div class="stat-info">
         <span class="stat-label">Total Utilisateurs</span>
@@ -17,7 +17,7 @@
       </div>
       <i class="bi bi-chevron-right ms-auto opacity-50"></i>
     </div>
-    <div class="stat-card" routerLink="/dashboard/admin-management/users">
+    <div class="stat-card clickable" routerLink="/dashboard/admin-management/users" [queryParams]="{filter: 'admin'}">
       <div class="stat-icon admins"><i class="bi bi-shield-lock"></i></div>
       <div class="stat-info">
         <span class="stat-label">Administrateurs</span>
@@ -25,7 +25,8 @@
       </div>
       <i class="bi bi-chevron-right ms-auto opacity-50"></i>
     </div>
-    <div class="stat-card" routerLink="/dashboard/admin-management/users">
+    <div class="stat-card clickable" routerLink="/dashboard/admin-management/users"
+      [queryParams]="{filter: 'consommateur_simple'}">
       <div class="stat-icon simple"><i class="bi bi-person"></i></div>
       <div class="stat-info">
         <span class="stat-label">Consommateurs</span>
@@ -46,7 +47,7 @@
       <h4>Sécurité</h4>
       <p>Modifiez votre mot de passe et accès</p>
     </div>
-    <div class="action-card" routerLink="/dashboard/admin-management/users">
+    <div class="action-card" routerLink="/dashboard/admin-management/users" [queryParams]="{filter: 'all'}">
       <div class="action-icon logs"><i class="bi bi-list-check"></i></div>
       <h4>Utilisateurs</h4>
       <p>Gérez la liste complète des membres</p>

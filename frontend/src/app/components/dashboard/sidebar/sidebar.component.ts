@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { SettingsService, UserSettings } from '../../../services/settings.service';
-import { Subscription } from 'rxjs';
+import { NotificationService } from '../../../services/notification.service';
+import { Subscription, interval } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-sidebar',
@@ -15,77 +17,25 @@ import { Subscription } from 'rxjs';
         <i class="bi bi-shield-check fs-2 me-2 text-warning" [ngClass]="{'ms-2': currentSettings.language === 'ar'}"></i>
         <span class="fs-4 fw-bold">OTIC 
           <small class="fw-light fs-6 opacity-75 d-block" *ngIf="user">
-            {{ (user.role === 'super_admin' || user.role === 'admin') ? 'Administration' : 'Espace Consommateur' }}
+            {{ getRoleLabel() }}
           </small>
         </span>
       </a>
       <hr class="border-secondary opacity-50">
       <ul class="nav nav-pills flex-column mb-auto mt-2 p-0">
-        <li class="nav-item mb-1">
-          <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-grid-1x2-fill fs-5" [ngClass]="currentSettings.language === 'ar' ? 'ms-3' : 'me-3'"></i>
-            {{ translate('dashboard') }}
-          </a>
-        </li>
-        <li class="nav-item mb-1">
-          <a routerLink="/dashboard/profile" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-person-circle fs-5" [ngClass]="currentSettings.language === 'ar' ? 'ms-3' : 'me-3'"></i>
-            {{ translate('profile') }}
-          </a>
-        </li>
-        <li class="nav-item mb-1" *ngIf="user?.role === 'consommateur_simple'">
-          <a routerLink="/dashboard/reclamation" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-file-earmark-text fs-5" [ngClass]="currentSettings.language === 'ar' ? 'ms-3' : 'me-3'"></i>
-            {{ translate('reclamations') }}
-          </a>
-        </li>
-
-        <!-- Admin Dashboard link (Common for both) -->
-        <li class="nav-item mb-1" *ngIf="user?.role === 'super_admin' || user?.role === 'admin' || isAdminRoute()">
-          <a [routerLink]="user?.role === 'super_admin' ? '/dashboard/admin-management' : '/dashboard/admin-home'" 
+        <li class="nav-item mb-1" *ngFor="let item of menuItems">
+          <a [routerLink]="item.path" 
              routerLinkActive="active" 
-             [routerLinkActiveOptions]="{exact: true}" 
-             class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-speedometer2 me-3 fs-5"></i>
-            Dashboard
-          </a>
-        </li>
-        <li class="nav-item mb-1" *ngIf="user?.role === 'super_admin' || isAdminRoute()">
-          <a routerLink="/dashboard/admin-management/users" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-people-fill me-3 fs-5"></i>
-            Utilisateurs
-          </a>
-        </li>
-        <li class="nav-item mb-1" *ngIf="user?.role === 'super_admin' || isAdminRoute()">
-          <a routerLink="/dashboard/admin-management/add" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-person-plus-fill me-3 fs-5"></i>
-            Ajouter Admin
-          </a>
-        </li>
-        <li class="nav-item mb-1" *ngIf="user?.role === 'super_admin' || isAdminRoute()">
-          <a routerLink="/dashboard/admin-management/security" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-shield-lock-fill me-3 fs-5"></i>
-            Sécurité
-          </a>
-        </li>
-
-        <!-- Standard Admin links -->
-        <li class="nav-item mb-1" *ngIf="user?.role === 'admin'">
-          <a routerLink="/dashboard/admin/assign" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-share-fill me-3 fs-5"></i>
-            Affecter Réclamation
-          </a>
-        </li>
-        <li class="nav-item mb-1" *ngIf="user?.role === 'admin'">
-          <a routerLink="/dashboard/admin/complements" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-plus-circle-fill me-3 fs-5"></i>
-            Demandes Complément
-          </a>
-        </li>
-        <li class="nav-item mb-1" *ngIf="user?.role === 'admin'">
-          <a routerLink="/dashboard/admin/consumers" routerLinkActive="active" class="nav-link text-white-50 d-flex align-items-center">
-            <i class="bi bi-people me-3 fs-5"></i>
-            Consommateurs
+             [routerLinkActiveOptions]="{exact: item.exact}" 
+             class="nav-link text-white-50 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <i [class]="'bi ' + item.icon + ' fs-5'" [ngClass]="currentSettings.language === 'ar' ? 'ms-3' : 'me-3'"></i>
+              {{ translate(item.labelKey) }}
+            </div>
+            <span *ngIf="item.labelKey === 'my_reclamations' && unreadNotifications > 0" 
+                  class="badge bg-danger rounded-pill ms-2 pulse-badge">
+              {{ unreadNotifications }}
+            </span>
           </a>
         </li>
       </ul>
@@ -148,17 +98,32 @@ import { Subscription } from 'rxjs';
     }
     
     [dir="rtl"] .bi { transform: scaleX(-1); }
+
+    .pulse-badge {
+      animation: pulse-red 2s infinite;
+      font-size: 0.7rem;
+      padding: 0.35em 0.65em;
+    }
+
+    @keyframes pulse-red {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
   `]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   user: any = null;
   currentSettings: UserSettings = { darkMode: false, language: 'fr' };
+  menuItems: any[] = [];
+  unreadNotifications: number = 0;
   private subscription: Subscription = new Subscription();
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private settingsService: SettingsService,
+    private notificationService: NotificationService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -170,20 +135,90 @@ export class SidebarComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Use currentUser$ from AuthService
     this.authService.currentUser$.subscribe(user => {
       this.user = user;
+      this.generateMenu();
+
+      if (user && user.role === 'consommateur_simple') {
+        this.startNotificationPolling();
+      }
+
       this.cdr.detectChanges();
     });
 
-    // Init if needed
     if (!this.user) {
       this.authService.getProfile().subscribe();
     }
   }
 
-  isAdminRoute(): boolean {
-    return this.router.url.includes('/admin-management');
+  startNotificationPolling(): void {
+    // Poll every 30 seconds for new notifications
+    this.subscription.add(
+      interval(30000).pipe(
+        startWith(0),
+        switchMap(() => this.notificationService.getUnreadCount())
+      ).subscribe({
+        next: (res) => {
+          this.unreadNotifications = res.count;
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Notification polling error:', err)
+      })
+    );
+  }
+
+  generateMenu(): void {
+    if (!this.user) {
+      this.menuItems = [];
+      return;
+    }
+
+    const roleConfigs: any = {
+      super_admin: [
+        { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
+        { path: '/dashboard/admin-management', icon: 'bi-speedometer2', labelKey: 'admin_panel', exact: true },
+        { path: '/dashboard/admin-management/users', icon: 'bi-people-fill', labelKey: 'manage_users', exact: false },
+        { path: '/dashboard/admin-management/add', icon: 'bi-person-plus-fill', labelKey: 'add_admin', exact: true },
+        { path: '/dashboard/admin-management/security', icon: 'bi-shield-lock-fill', labelKey: 'security', exact: true },
+        { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
+      ],
+      admin: [
+        { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
+        { path: '/dashboard/admin/assign', icon: 'bi-share-fill', labelKey: 'assign_reclamations', exact: false },
+        { path: '/dashboard/admin/complements', icon: 'bi-plus-circle-fill', labelKey: 'complement_requests', exact: false },
+        { path: '/dashboard/admin/all-reclamations', icon: 'bi-list-ul', labelKey: 'all_reclamations', exact: false },
+        { path: '/dashboard/admin/consumers', icon: 'bi-people', labelKey: 'manage_consumers', exact: false },
+        { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
+      ],
+      consommateur_simple: [
+        { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
+        { path: '/dashboard/reclamation', icon: 'bi-file-earmark-text', labelKey: 'my_reclamations', exact: false },
+        { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
+      ],
+      admin_regional: [
+        { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
+        { path: '/dashboard/admin/assign', icon: 'bi-share-fill', labelKey: 'assign_reclamations', exact: false },
+        { path: '/dashboard/admin/complements', icon: 'bi-plus-circle-fill', labelKey: 'complement_requests', exact: false },
+        { path: '/dashboard/admin/all-reclamations', icon: 'bi-list-ul', labelKey: 'all_reclamations', exact: false },
+        { path: '/dashboard/admin/consumers', icon: 'bi-people', labelKey: 'manage_consumers', exact: false },
+        { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
+      ]
+    };
+
+    this.menuItems = roleConfigs[this.user.role] || [];
+  }
+
+  getRoleLabel(): string {
+    if (!this.user) return '';
+    switch (this.user.role) {
+      case 'super_admin': return 'Super Administration';
+      case 'admin': return 'Administration';
+      case 'admin_regional': return 'Administration Régionale';
+      default: return 'Espace Consommateur';
+    }
   }
 
   ngOnDestroy(): void {

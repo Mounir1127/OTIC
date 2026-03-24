@@ -36,8 +36,14 @@ import { AdminService } from '../../../../services/admin.service';
                             <td>{{user.telephone}}</td>
                             <td>{{user.adresse?.region}} / {{user.adresse?.ville}}</td>
                         </tr>
-                        <tr *ngIf="users.length === 0">
+                        <tr *ngIf="users.length === 0 && !loading">
                             <td colspan="4" class="text-center py-4">Aucun consommateur trouvé</td>
+                        </tr>
+                        <tr *ngIf="loading && users.length === 0">
+                            <td colspan="4" class="text-center py-4">
+                                <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
+                                Chargement...
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -57,17 +63,33 @@ import { AdminService } from '../../../../services/admin.service';
 })
 export class ConsumersListComponent implements OnInit {
     users: any[] = [];
+    loading = true;
 
     constructor(private adminService: AdminService) { }
 
     ngOnInit() {
+        const cached = localStorage.getItem('otic_admin_consumers_list');
+        if (cached) {
+            try {
+                this.users = JSON.parse(cached);
+                this.loading = false;
+            } catch (e) { }
+        }
         this.loadData();
     }
 
     loadData() {
+        if (this.users.length === 0) this.loading = true;
         this.adminService.getConsumers().subscribe({
-            next: (data) => this.users = data,
-            error: (err) => console.error(err)
+            next: (data) => {
+                this.users = data;
+                localStorage.setItem('otic_admin_consumers_list', JSON.stringify(this.users));
+                this.loading = false;
+            },
+            error: (err) => {
+                console.error(err);
+                this.loading = false;
+            }
         });
     }
 }

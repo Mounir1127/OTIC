@@ -27,24 +27,25 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
             <!-- Visual Step Indicator -->
             <div class="d-flex justify-content-between position-relative mb-5 mt-2 px-md-4">
                 <div class="position-absolute top-50 start-0 translate-middle-y z-n1 bg-light-subtle rounded-pill" style="height: 4px; width: 100%;"></div>
-                <div class="position-absolute top-50 start-0 translate-middle-y z-n1 bg-accent transition-width" style="height: 4px; transition: width 0.4s ease;" [style.width.%]="((step-1)/4)*100"></div>
+                <div class="position-absolute top-50 start-0 translate-middle-y z-n1 bg-accent transition-width" style="height: 4px; transition: width 0.4s ease;" [style.width.%]="((step-1)/5)*100"></div>
                 
-                <div *ngFor="let s of [1,2,3,4,5]; let i = index" class="d-flex flex-column align-items-center z-1 bg-step px-2 cursor-default">
+                <div *ngFor="let s of [1,2,3,4,5,6]; let i = index" class="d-flex flex-column align-items-center z-1 bg-step px-2 cursor-default">
                     <div class="rounded-circle d-flex align-items-center justify-content-center border-2 transition-all shadow-sm step-circle" 
                          [class.bg-accent]="step >= s" 
                          [class.border-accent]="step >= s"
                          [class.text-white]="step >= s"
                          [class.step-inactive]="step < s"
-                         style="width: 48px; height: 48px; border: 2px solid;">
-                        <i class="bi fs-5" 
-                           [class.bi-tag-fill]="s===1" 
-                           [class.bi-list-ul]="s===2" 
-                           [class.bi-file-earmark-text]="s===3" 
-                           [class.bi-shop]="s===4" 
-                           [class.bi-check-lg]="s===5"></i>
+                         style="width: 42px; height: 42px; border: 2px solid;">
+                        <i class="bi fs-6" 
+                           [class.bi-person-badge-fill]="s===1" 
+                           [class.bi-tag-fill]="s===2" 
+                           [class.bi-list-ul]="s===3" 
+                           [class.bi-file-earmark-text]="s===4" 
+                           [class.bi-shop]="s===5" 
+                           [class.bi-check-lg]="s===6"></i>
                     </div>
-                    <span class="small fw-semibold mt-2 transition-colors text-uppercase ls-1" [class.text-accent]="step >= s" [class.text-muted]="step < s" style="font-size: 0.7rem;">
-                        {{ ['Choix', 'Détails', 'Preuves', 'Opérat.', 'Valid.'][i] }}
+                    <span class="small fw-semibold mt-2 transition-colors text-uppercase ls-1" [class.text-accent]="step >= s" [class.text-muted]="step < s" style="font-size: 0.65rem;">
+                         {{ ['Identité', 'Type', 'Détails', 'Preuves', 'Opérat.', 'Valid.'][i] }}
                     </span>
                 </div>
             </div>
@@ -68,8 +69,61 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
             <!-- Form Wizard -->
             <form *ngIf="!successTrackingCode" (ngSubmit)="submit()" #f="ngForm" class="fade-in">
                 
-                <!-- STEP 1: Classification -->
+                <!-- STEP 1: Identification Complainant -->
                 <div *ngIf="step === 1" class="step-content">
+                    <h5 class="mb-4 pb-2 border-bottom text-primary fw-semibold"><i class="bi bi-person-badge me-2"></i>Identification</h5>
+                    <p class="text-muted small mb-4">La réclamation est-elle faite au nom d'un particulier ou d'une entreprise ?</p>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <div class="card h-100 border-2 transition-all p-3 cursor-pointer selection-card" 
+                                 [class.border-accent]="reclamation.complainantType === 'particulier'"
+                                 (click)="reclamation.complainantType = 'particulier'">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-box bg-light-subtle text-primary rounded-circle p-2 me-3"><i class="bi bi-person fs-4"></i></div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">Particulier</h6>
+                                        <small class="text-muted">Consommateur final</small>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill ms-auto text-accent fs-4" *ngIf="reclamation.complainantType === 'particulier'"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="card h-100 border-2 transition-all p-3 cursor-pointer selection-card" 
+                                 [class.border-accent]="reclamation.complainantType === 'professionnel'"
+                                 (click)="reclamation.complainantType = 'professionnel'">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-box bg-light-subtle text-primary rounded-circle p-2 me-3"><i class="bi bi-building fs-4"></i></div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">Professionnel / Société</h6>
+                                        <small class="text-muted">B2B ou Revendeur</small>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill ms-auto text-accent fs-4" *ngIf="reclamation.complainantType === 'professionnel'"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div *ngIf="reclamation.complainantType === 'professionnel'" class="fade-in">
+                        <div class="alert alert-info border-0 shadow-sm p-3 mb-4">
+                            <i class="bi bi-building-check me-2"></i> Informations Professionnelles requises.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label font-monospace small text-uppercase">Raison Sociale</label>
+                                <input type="text" class="form-control" name="raison" [(ngModel)]="reclamation.raison_sociale" placeholder="Nom de l'entreprise" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label font-monospace small text-uppercase">Matricule Fiscal</label>
+                                <input type="text" class="form-control" name="mf" [(ngModel)]="reclamation.matricule_fiscal" placeholder="Ex: 1234567/A/M/000" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Classification -->
+                <div *ngIf="step === 2" class="step-content">
                     <h5 class="mb-4 pb-2 border-bottom text-primary fw-semibold"><i class="bi bi-tag me-2"></i>Classification</h5>
                     
                     <div class="mb-4">
@@ -115,8 +169,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                     </div>
                 </div>
 
-                <!-- STEP 2: Nature -->
-                <div *ngIf="step === 2" class="step-content">
+                <!-- STEP 3: Nature -->
+                <div *ngIf="step === 3" class="step-content">
                      <h5 class="mb-4 pb-2 border-bottom text-primary fw-semibold"><i class="bi bi-list-check me-2"></i>Détails du problème</h5>
                      
                      <div class="mb-4">
@@ -139,8 +193,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                      </div>
                 </div>
 
-                <!-- STEP 3: Preuve -->
-                <div *ngIf="step === 3" class="step-content">
+                <!-- STEP 4: Preuve -->
+                <div *ngIf="step === 4" class="step-content">
                     <h5 class="mb-4 pb-2 border-bottom text-primary fw-semibold"><i class="bi bi-paperclip me-2"></i>Pièces Justificatives</h5>
                     
                     <div class="alert alert-light border-primary border-start border-4 shadow-sm mb-4">
@@ -174,8 +228,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                     </div>
                 </div>
 
-                <!-- STEP 4: Opérateur -->
-                <div *ngIf="step === 4" class="step-content">
+                <!-- STEP 5: Opérateur -->
+                <div *ngIf="step === 5" class="step-content">
                     <h5 class="mb-4 pb-2 border-bottom text-primary fw-semibold"><i class="bi bi-shop me-2"></i>Opérateur Concerné</h5>
                     
                     <div class="mb-4">
@@ -188,8 +242,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                     </div>
                 </div>
 
-                <!-- STEP 5: Validation -->
-                <div *ngIf="step === 5" class="step-content">
+                <!-- STEP 6: Validation -->
+                <div *ngIf="step === 6" class="step-content">
                     <h5 class="mb-4 pb-2 border-bottom text-primary fw-semibold"><i class="bi bi-check2-circle me-2"></i>Vérification</h5>
                     
                     <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-4">
@@ -201,6 +255,17 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
 
                     <div class="bg-light-subtle rounded-4 p-4 border form-review">
                         <dl class="row mb-0">
+                            <dt class="col-sm-4 text-muted text-uppercase small fw-bold mb-1">Plaignant</dt>
+                            <dd class="col-sm-8 mb-4">
+                                <span class="badge" [class.bg-primary]="reclamation.complainantType === 'particulier'" [class.bg-dark]="reclamation.complainantType === 'professionnel'">
+                                    {{ reclamation.complainantType === 'particulier' ? 'Particulier' : 'Professionnel / Société' }}
+                                </span>
+                                <div *ngIf="reclamation.complainantType === 'professionnel'" class="mt-2">
+                                    <div class="fw-bold">{{ reclamation.raison_sociale }}</div>
+                                    <div class="small text-muted">MF: {{ reclamation.matricule_fiscal }}</div>
+                                </div>
+                            </dd>
+
                             <dt class="col-sm-4 text-muted text-uppercase small fw-bold mb-1">Type</dt>
                             <dd class="col-sm-8 mb-4 fw-bold">{{ reclamation.type }}</dd>
 
@@ -234,11 +299,11 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                         Retour
                     </button>
                     
-                    <button type="button" class="btn btn-primary btn-lg px-5 shadow-sm rounded-pill fw-bold" (click)="nextStep()" *ngIf="step < 5" [disabled]="!isStepValid()">
+                    <button type="button" class="btn btn-primary btn-lg px-5 shadow-sm rounded-pill fw-bold" (click)="nextStep()" *ngIf="step < 6" [disabled]="!isStepValid()">
                         Suivant
                     </button>
 
-                    <button type="submit" class="btn btn-success btn-lg px-5 shadow-lg rounded-pill fw-bold text-uppercase ls-1" *ngIf="step === 5">
+                    <button type="submit" class="btn btn-success btn-lg px-5 shadow-lg rounded-pill fw-bold text-uppercase ls-1" *ngIf="step === 6">
                         Confirmer et Envoyer
                     </button>
                 </div>
@@ -261,6 +326,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
     .hover-shadow:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-color: #d97706 !important; }
     .custom-check:hover { background-color: #ffff; border-color: #d97706 !important; }
     .upload-zone:hover { border-color: #d97706 !important; background-color: #fffbeb !important; }
+    .selection-card { border-radius: 20px; border: 2px solid #f1f5f9; transition: all 0.3s; }
+    .selection-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05); }
     .fade-in { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -288,6 +355,9 @@ export class AddReclamationComponent {
     availableSubSectors: string[] = [];
 
     reclamation = {
+        complainantType: 'particulier',
+        raison_sociale: '',
+        matricule_fiscal: '',
         type: 'Produit',
         secteur: '',
         sous_secteur: '',
@@ -300,6 +370,7 @@ export class AddReclamationComponent {
     loading = false;
     successTrackingCode = '';
     errorMessage = '';
+    selectedFiles: File[] = [];
 
     constructor(
         private reclamationService: ReclamationService,
@@ -327,15 +398,23 @@ export class AddReclamationComponent {
     onFileSelected(event: any) {
         const files = event.target.files;
         for (let i = 0; i < files.length; i++) {
+            this.selectedFiles.push(files[i]);
+            // Keep the string name for UI display
             this.reclamation.preuves.push(files[i].name);
         }
     }
 
     isStepValid(): boolean {
-        if (this.step === 1) return !!this.reclamation.type && !!this.reclamation.secteur && !!this.reclamation.sous_secteur;
-        if (this.step === 2) return this.reclamation.natures.length > 0 && !!this.reclamation.description;
-        if (this.step === 3) return true;
-        if (this.step === 4) return !!this.reclamation.operateur;
+        if (this.step === 1) {
+            if (this.reclamation.complainantType === 'professionnel') {
+                return !!this.reclamation.raison_sociale && !!this.reclamation.matricule_fiscal;
+            }
+            return true;
+        }
+        if (this.step === 2) return !!this.reclamation.type && !!this.reclamation.secteur && !!this.reclamation.sous_secteur;
+        if (this.step === 3) return this.reclamation.natures.length > 0 && !!this.reclamation.description;
+        if (this.step === 4) return true;
+        if (this.step === 5) return !!this.reclamation.operateur;
         return true;
     }
 
@@ -349,10 +428,30 @@ export class AddReclamationComponent {
 
     async submit() {
         this.errorMessage = '';
-        console.log('🚀 Direct Submit attempt...');
+        console.log('🚀 PRO Submit attempt...');
 
         try {
-            const res = await firstValueFrom(this.reclamationService.createReclamation(this.reclamation));
+            const formData = new FormData();
+            formData.append('complainantType', this.reclamation.complainantType);
+            formData.append('raison_sociale', this.reclamation.raison_sociale);
+            formData.append('matricule_fiscal', this.reclamation.matricule_fiscal);
+            formData.append('type', this.reclamation.type);
+            formData.append('secteur', this.reclamation.secteur);
+            formData.append('sous_secteur', this.reclamation.sous_secteur);
+            formData.append('description', this.reclamation.description);
+            formData.append('operateur', this.reclamation.operateur);
+
+            if (this.reclamation.natures && this.reclamation.natures.length > 0) {
+                this.reclamation.natures.forEach(n => formData.append('natures[]', n));
+            }
+
+            if (this.selectedFiles && this.selectedFiles.length > 0) {
+                this.selectedFiles.forEach(file => {
+                    formData.append('preuves', file);
+                });
+            }
+
+            const res = await firstValueFrom(this.reclamationService.createReclamation(formData));
             console.log('✅ Response received:', res);
 
             this.successTrackingCode = res.trackingCode || res._id || `REC-${Date.now().toString().slice(-4)}`;
@@ -367,7 +466,11 @@ export class AddReclamationComponent {
     resetForm() {
         this.step = 1;
         this.successTrackingCode = '';
+        this.selectedFiles = [];
         this.reclamation = {
+            complainantType: 'particulier',
+            raison_sociale: '',
+            matricule_fiscal: '',
             type: 'Produit',
             secteur: '',
             sous_secteur: '',

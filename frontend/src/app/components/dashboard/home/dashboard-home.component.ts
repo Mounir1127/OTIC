@@ -158,10 +158,15 @@ export class DashboardHomeComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    const cached = localStorage.getItem('otic_dash_home_stats');
+    if (cached) {
+      try { this.stats = JSON.parse(cached); } catch (e) { }
+    }
+
     this.authService.currentUser$.subscribe(user => {
       if (user?.role === 'super_admin') {
         this.router.navigate(['/dashboard/admin-management']);
-      } else if (user?.role === 'admin') {
+      } else if (user?.role === 'admin' || user?.role === 'admin_regional') {
         this.router.navigate(['/dashboard/admin-home']);
       }
     });
@@ -173,6 +178,7 @@ export class DashboardHomeComponent implements OnInit {
           this.stats.inProgress = data.filter((r: any) => r.status !== 'Résolue' && r.status !== 'Rejetée').length;
           this.stats.resolved = data.filter((r: any) => r.status === 'Résolue').length;
           this.recentReclamations = data.slice(0, 5);
+          localStorage.setItem('otic_dash_home_stats', JSON.stringify(this.stats));
         }
       },
       error: (err: any) => console.error(err)

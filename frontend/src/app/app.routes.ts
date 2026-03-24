@@ -13,10 +13,13 @@ import { AdminManagementComponent } from './components/dashboard/admin-managemen
 import { AddAdminComponent } from './components/dashboard/admin-management/add-admin/add-admin.component';
 import { SecuritySettingsComponent } from './components/dashboard/admin-management/security-settings/security-settings.component';
 import { UsersListComponent } from './components/dashboard/admin-management/users-list/users-list.component';
+import { EditUserComponent } from './components/dashboard/admin-management/edit-user/edit-user.component';
 import { AdminHomeComponent } from './components/dashboard/admin/home/admin-home.component';
 import { AssignReclamationComponent } from './components/dashboard/admin/assign-reclamation/assign-reclamation.component';
 import { ComplementRequestsComponent } from './components/dashboard/admin/complement-requests/complement-requests.component';
 import { ConsumersListComponent } from './components/dashboard/admin/consumers-list/consumers-list.component';
+import { AllReclamationsComponent } from './components/dashboard/admin/all-reclamations/all-reclamations.component';
+import { StatsComponent } from './components/dashboard/admin/stats/stats.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -35,10 +38,13 @@ export const routes: Routes = [
             { path: 'admin-management/add', component: AddAdminComponent },
             { path: 'admin-management/security', component: SecuritySettingsComponent },
             { path: 'admin-management/users', component: UsersListComponent },
+            { path: 'admin-management/users/edit/:id', component: EditUserComponent },
             { path: 'admin-home', component: AdminHomeComponent },
             { path: 'admin/assign', component: AssignReclamationComponent },
             { path: 'admin/complements', component: ComplementRequestsComponent },
-            { path: 'admin/consumers', component: ConsumersListComponent }
+            { path: 'admin/all-reclamations', component: AllReclamationsComponent },
+            { path: 'admin/consumers', component: ConsumersListComponent },
+            { path: 'admin/stats', component: StatsComponent }
         ]
     },
     { path: '**', redirectTo: '' }

@@ -6,7 +6,7 @@ import { Observable, BehaviorSubject, tap } from 'rxjs';
     providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = 'http://localhost:4000/api/auth';
+    private apiUrl = 'http://localhost:5000/api/auth';
     private currentUserSubject = new BehaviorSubject<any>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -24,8 +24,9 @@ export class AuthService {
     login(user: any): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/login`, user).pipe(
             tap(res => {
-                if (res.user) {
-                    this.currentUserSubject.next(res.user);
+                if (res.token) {
+                    localStorage.setItem('token', res.token);
+                    this.getProfile().subscribe();
                 }
             })
         );

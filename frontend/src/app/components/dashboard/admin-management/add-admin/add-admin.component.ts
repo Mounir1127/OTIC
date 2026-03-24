@@ -71,6 +71,7 @@ export class AddAdminComponent implements OnInit {
             next: (res) => {
                 this.successMsg = 'Administrateur créé avec succès !';
                 this.errorMsg = '';
+                this.adminService.triggerRefresh();
                 this.resetForm();
             },
             error: (err) => {
