@@ -17,4 +17,8 @@ export class Api {
   getPublicStats(): Observable<any> {
     return this.http.get(`${this.apiUrl}/api/public/stats`);
   }
+
+  getWaterBrands(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/api/public/water-brands`);
+  }
 }

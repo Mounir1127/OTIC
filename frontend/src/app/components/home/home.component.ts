@@ -2,11 +2,12 @@ import { Component, HostListener, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Api } from '../../services/api';
+import { MineralWatersComponent } from '../dashboard/mineral-waters/mineral-waters.component';
 
 @Component({
     selector: 'app-home',
     standalone: true,
-    imports: [RouterModule, CommonModule],
+    imports: [RouterModule, CommonModule, MineralWatersComponent],
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.css']
 })
@@ -37,6 +38,10 @@ export class HomeComponent implements OnInit {
 
     @HostListener('window:scroll', [])
     onWindowScroll() {
-        this.isScrolled = window.scrollY > 50;
+        this.isScrolled = window.scrollY > 300;
+    }
+
+    scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }

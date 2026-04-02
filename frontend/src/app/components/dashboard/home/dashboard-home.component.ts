@@ -166,7 +166,7 @@ export class DashboardHomeComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       if (user?.role === 'super_admin') {
         this.router.navigate(['/dashboard/admin-management']);
-      } else if (user?.role === 'admin' || user?.role === 'admin_regional') {
+      } else if (user?.role === 'admin_regional') {
         this.router.navigate(['/dashboard/admin-home']);
       }
     });

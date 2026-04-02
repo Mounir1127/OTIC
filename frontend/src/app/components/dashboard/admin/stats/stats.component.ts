@@ -22,6 +22,7 @@ export class StatsComponent implements OnInit, AfterViewInit {
     @ViewChild('statusChart') statusChartRef!: ElementRef;
     @ViewChild('processingChart') processingChartRef!: ElementRef;
     @ViewChild('dashboardContent') dashboardContent!: ElementRef;
+    @ViewChild('exportSection') exportSection!: ElementRef;
 
     stats: any = {
         volumeByCategory: [],
@@ -53,11 +54,25 @@ export class StatsComponent implements OnInit, AfterViewInit {
 
     ngOnInit(): void {
         this.loadRegions();
+        
+        // Load from cache for "direct" feel
+        const cached = localStorage.getItem('otic_admin_full_stats');
+        if (cached) {
+            try {
+                this.stats = JSON.parse(cached);
+                this.loading = false;
+                // We'll update charts in afterViewInit if we have data
+            } catch (e) { }
+        }
+        
         this.loadStats();
     }
 
     ngAfterViewInit(): void {
-        // Initial charts will be created after stats load
+        // If we loaded from cache, render charts immediately
+        if (!this.loading && this.stats.totalCount > 0) {
+            setTimeout(() => this.updateCharts(), 100);
+        }
     }
 
     loadRegions(): void {
@@ -70,11 +85,18 @@ export class StatsComponent implements OnInit, AfterViewInit {
     }
 
     loadStats(): void {
-        this.loading = true;
+        // Only show loading if we don't have cached data
+        if (!this.stats || this.stats.totalCount === 0) {
+            this.loading = true;
+        }
+        
         this.adminService.getStats(this.filters).subscribe({
             next: (data) => {
                 this.stats = data;
                 this.loading = false;
+
+                // Save to cache
+                localStorage.setItem('otic_admin_full_stats', JSON.stringify(data));
 
                 // Force change detection so *ngIf="!loading" is evaluated and canvas elements are created
                 this.cdr.detectChanges();
@@ -226,7 +248,7 @@ export class StatsComponent implements OnInit, AfterViewInit {
     }
 
     exportPDF(): void {
-        const data = this.dashboardContent.nativeElement;
+        const data = this.exportSection.nativeElement;
         html2canvas(data, { scale: 2 }).then(canvas => {
             const imgWidth = 208;
             const pageHeight = 295;

@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const mongoose = require("mongoose");
+const passport = require('passport');
 
 // @route   POST api/auth/register
 // @desc    Register user
@@ -23,9 +24,9 @@ router.post("/register", async (req, res) => {
         console.log('Registration attempt:', { nom, prenom, email, telephone, cin, adresse });
 
         // Validate required fields
-        if (!nom || !prenom || !email || !telephone || !password) {
+        if (!nom || !prenom || !email || !telephone || !cin || !password) {
             console.log('Missing required fields');
-            return res.status(400).json({ msg: "Please provide all required fields" });
+            return res.status(400).json({ msg: "Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Téléphone, CIN, Mot de passe)" });
         }
 
         // Validate adresse structure

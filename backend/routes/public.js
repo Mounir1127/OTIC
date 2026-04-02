@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Reclamation = require('../models/Reclamation');
 const Governorate = require('../models/Governorate');
+const WaterBrand = require('../models/WaterBrand');
 
 // @route   GET api/public/stats
 // @desc    Get public statistics for home page
@@ -25,6 +26,19 @@ router.get('/stats', async (req, res) => {
             totalGovernorates,
             averageResponseTime
         });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   GET api/public/water-brands
+// @desc    Get all water brands data
+// @access  Public
+router.get('/water-brands', async (req, res) => {
+    try {
+        const brands = await WaterBrand.find().sort({ tds: 1 });
+        res.json(brands);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');

@@ -284,12 +284,20 @@ export class ComplementRequestsComponent implements OnInit {
     constructor(private adminService: AdminService) { }
 
     ngOnInit() {
+        // Load from cache for "direct" feel
+        const cached = localStorage.getItem('otic_admin_complement_recs');
+        if (cached) {
+            try { this.reclamations = JSON.parse(cached); } catch (e) { }
+        }
         this.loadData();
     }
 
     loadData() {
         this.adminService.getComplementReclamations().subscribe({
-            next: (data) => this.reclamations = data,
+            next: (data) => {
+                this.reclamations = data;
+                localStorage.setItem('otic_admin_complement_recs', JSON.stringify(data));
+            },
             error: (err) => console.error(err)
         });
     }

@@ -88,7 +88,7 @@ export class UsersListComponent implements OnInit, OnDestroy {
 
     calculateStats() {
         this.stats.totalUsers = this.users.length;
-        this.stats.totalAdmins = this.users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
+        this.stats.totalAdmins = this.users.filter(u => u.role === 'admin_regional' || u.role === 'super_admin').length;
         this.stats.totalConsumers = this.users.filter(u => u.role === 'consommateur_simple').length;
     }
 
@@ -104,7 +104,7 @@ export class UsersListComponent implements OnInit, OnDestroy {
     get filteredUsers() {
         if (this.selectedFilter === 'all') return this.users;
         if (this.selectedFilter === 'admin') {
-            return this.users.filter(u => u.role === 'admin' || u.role === 'super_admin');
+            return this.users.filter(u => u.role === 'admin_regional' || u.role === 'super_admin');
         }
         return this.users.filter(u => u.role === this.selectedFilter);
     }

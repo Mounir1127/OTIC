@@ -181,20 +181,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { path: '/dashboard/admin-management/add', icon: 'bi-person-plus-fill', labelKey: 'add_admin', exact: true },
         { path: '/dashboard/admin-management/security', icon: 'bi-shield-lock-fill', labelKey: 'security', exact: true },
         { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
-        { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
-      ],
-      admin: [
-        { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
-        { path: '/dashboard/admin/assign', icon: 'bi-share-fill', labelKey: 'assign_reclamations', exact: false },
-        { path: '/dashboard/admin/complements', icon: 'bi-plus-circle-fill', labelKey: 'complement_requests', exact: false },
-        { path: '/dashboard/admin/all-reclamations', icon: 'bi-list-ul', labelKey: 'all_reclamations', exact: false },
-        { path: '/dashboard/admin/consumers', icon: 'bi-people', labelKey: 'manage_consumers', exact: false },
-        { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ],
       consommateur_simple: [
         { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
         { path: '/dashboard/reclamation', icon: 'bi-file-earmark-text', labelKey: 'my_reclamations', exact: false },
+        { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ],
       admin_regional: [
@@ -204,6 +197,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { path: '/dashboard/admin/all-reclamations', icon: 'bi-list-ul', labelKey: 'all_reclamations', exact: false },
         { path: '/dashboard/admin/consumers', icon: 'bi-people', labelKey: 'manage_consumers', exact: false },
         { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ]
     };
@@ -215,7 +209,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (!this.user) return '';
     switch (this.user.role) {
       case 'super_admin': return 'Super Administration';
-      case 'admin': return 'Administration';
       case 'admin_regional': return 'Administration Régionale';
       default: return 'Espace Consommateur';
     }

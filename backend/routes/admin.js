@@ -30,7 +30,7 @@ const superAdminAuth = async (req, res, next) => {
 const adminAuth = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user || (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'admin_regional')) {
+        if (!user || (user.role !== 'super_admin' && user.role !== 'admin_regional')) {
             return res.status(403).json({ msg: 'Access denied. Admin only.' });
         }
         next();
@@ -247,7 +247,7 @@ router.post('/create-admin', [auth, superAdminAuth], async (req, res) => {
             email,
             telephone,
             password,
-            role: 'admin',
+            role: 'admin_regional',
             adresse
         });
 
@@ -342,7 +342,7 @@ router.put('/user/:id/role', [auth, superAdminAuth], async (req, res) => {
         const { role } = req.body;
 
         // Validate role
-        const validRoles = ['super_admin', 'admin', 'admin_regional', 'consommateur_simple', 'conventionne'];
+        const validRoles = ['super_admin', 'admin_regional', 'consommateur_simple', 'conventionne'];
         if (!validRoles.includes(role)) {
             return res.status(400).json({ msg: 'Invalid role' });
         }

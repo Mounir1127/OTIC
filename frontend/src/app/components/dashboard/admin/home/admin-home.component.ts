@@ -17,7 +17,7 @@ import { AdminService } from '../../../../services/admin.service';
         <!-- Stats Row -->
         <div class="row g-4 mb-5">
             <div class="col-md-4">
-                <div class="stat-card consumers shadow-sm">
+                <div class="stat-card consumers shadow-sm clickable" routerLink="/dashboard/admin/stats">
                     <div class="d-flex align-items-center">
                         <div class="stat-icon me-3"><i class="bi bi-people-fill"></i></div>
                         <div>
@@ -28,7 +28,7 @@ import { AdminService } from '../../../../services/admin.service';
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card pending shadow-sm">
+                <div class="stat-card pending shadow-sm clickable" routerLink="/dashboard/admin/stats">
                     <div class="d-flex align-items-center">
                         <div class="stat-icon me-3"><i class="bi bi-hourglass-split"></i></div>
                         <div>
@@ -39,7 +39,7 @@ import { AdminService } from '../../../../services/admin.service';
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card complements shadow-sm">
+                <div class="stat-card complements shadow-sm clickable" routerLink="/dashboard/admin/stats">
                     <div class="d-flex align-items-center">
                         <div class="stat-icon me-3"><i class="bi bi-plus-circle"></i></div>
                         <div>
@@ -99,6 +99,7 @@ import { AdminService } from '../../../../services/admin.service';
         .stat-label { color: #64748b; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; }
         .stat-value { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
         .avatar-small { width: 35px; height: 35px; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; font-weight: bold; }
+        .clickable { cursor: pointer; }
         .fade-in { animation: fadeIn 0.4s ease-out; }
         .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }

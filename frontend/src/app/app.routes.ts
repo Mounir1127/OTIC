@@ -20,9 +20,11 @@ import { ComplementRequestsComponent } from './components/dashboard/admin/comple
 import { ConsumersListComponent } from './components/dashboard/admin/consumers-list/consumers-list.component';
 import { AllReclamationsComponent } from './components/dashboard/admin/all-reclamations/all-reclamations.component';
 import { StatsComponent } from './components/dashboard/admin/stats/stats.component';
+import { MineralWatersComponent } from './components/dashboard/mineral-waters/mineral-waters.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
+    { path: 'eaux-minerales', component: MineralWatersComponent },
     { path: 'login', component: LoginComponent },
     { path: 'register', component: RegisterComponent },
     {
@@ -44,7 +46,8 @@ export const routes: Routes = [
             { path: 'admin/complements', component: ComplementRequestsComponent },
             { path: 'admin/all-reclamations', component: AllReclamationsComponent },
             { path: 'admin/consumers', component: ConsumersListComponent },
-            { path: 'admin/stats', component: StatsComponent }
+            { path: 'admin/stats', component: StatsComponent },
+            { path: 'mineral-waters', component: MineralWatersComponent }
         ]
     },
     { path: '**', redirectTo: '' }

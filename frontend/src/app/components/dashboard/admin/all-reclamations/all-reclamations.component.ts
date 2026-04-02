@@ -462,7 +462,9 @@ export class AllReclamationsComponent implements OnInit {
     }
 
     loadData() {
-        this.loading = true;
+        if (this.reclamations.length === 0) {
+            this.loading = true;
+        }
         this.adminService.getAllReclamations().subscribe({
             next: (data) => {
                 this.reclamations = data;

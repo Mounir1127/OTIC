@@ -56,144 +56,165 @@ import { AdminService } from '../../../../services/admin.service';
             </div>
         </div>
 
-        <!-- Details Modal -->
+        <!-- Details Modal - PREMIUM ADMIN DESIGN -->
         <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-            <div class="modal-content pro-modal" (click)="$event.stopPropagation()">
-                <div class="modal-header pro-header">
-                    <div class="header-icon">
-                        <i class="bi bi-file-earmark-text"></i>
-                    </div>
-                    <div class="header-title">
-                        <h5 class="mb-0 fw-bold">Détails de la Réclamation</h5>
-                        <small class="text-muted font-monospace">{{selectedReclamation?.trackingCode}}</small>
-                    </div>
-                    <button class="btn-close-pro" (click)="closeModal()">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                </div>
-                
-                <div class="modal-body pro-body p-4" *ngIf="selectedReclamation">
-                    <div class="row g-4" id="print-area">
-                        <!-- Information Grid -->
-                        <div class="col-md-6">
-                            <div class="pro-info-card">
-                                <label class="pro-label">Utilisateur / Client</label>
-                                <p class="pro-value mb-1">{{selectedReclamation.user?.prenom}} {{selectedReclamation.user?.nom}}</p>
-                                <span class="pro-badge">{{selectedReclamation.user?.email || 'Email non fourni'}}</span>
-                                <div class="mt-2 small text-muted">
-                                    <i class="bi bi-geo-alt-fill me-1"></i>{{selectedReclamation.gouvernorat || 'Gouvernorat non spécifié'}}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="pro-info-card">
-                                <label class="pro-label">Classification & Date</label>
-                                <p class="pro-value mb-1">{{selectedReclamation.type}}</p>
-                                <div class="mb-2"><span class="pro-badge light">{{selectedReclamation.secteur}}</span></div>
-                                <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{selectedReclamation.dateCreation | date:'dd/MM/yyyy HH:mm'}}</small>
-                            </div>
-                        </div>
+            <div class="modal-shell" (click)="$event.stopPropagation()">
 
-                        <!-- Specific Details -->
-                        <div class="col-md-6">
-                            <div class="pro-info-card h-100">
-                                <label class="pro-label">Activité & Sous-Secteur</label>
-                                <p class="pro-value mb-1">{{selectedReclamation.sous_secteur || 'Non spécifié'}}</p>
-                                <p class="text-muted small mb-0">{{selectedReclamation.activite || 'Activité non spécifiée'}}</p>
-                            </div>
+                <!-- === HEADER === -->
+                <div class="mshell-header">
+                    <div class="mshell-header-bg"></div>
+                    <div class="mshell-header-content">
+                        <div class="mshell-icon-wrap">
+                            <i class="bi bi-file-earmark-medical-fill"></i>
                         </div>
-                        <div class="col-md-6">
-                            <div class="pro-info-card h-100">
-                                <label class="pro-label">Opérateur Concerné</label>
-                                <p class="pro-value mb-1">{{selectedReclamation.operateur || 'Non spécifié'}}</p>
-                                <span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>ENTREPRISE</span>
-                            </div>
+                        <div class="mshell-header-text">
+                            <div class="mshell-header-eyebrow">Affectation Réclamation — Vue Admin</div>
+                            <div class="mshell-header-code font-monospace">{{selectedReclamation?.trackingCode}}</div>
                         </div>
-
-                        <!-- Natures / Motifs -->
-                        <div class="col-md-12">
-                            <div class="pro-info-card">
-                                <label class="pro-label">Motifs / Natures de la réclamation</label>
-                                <div class="d-flex flex-wrap gap-2 mt-2">
-                                    <span *ngFor="let nat of selectedReclamation.natures" class="nature-tag">
-                                        {{nat}}
-                                    </span>
-                                    <span *ngIf="selectedReclamation.autre_nature" class="nature-tag autre">
-                                        Autre: {{selectedReclamation.autre_nature}}
-                                    </span>
-                                    <span *ngIf="!selectedReclamation.natures?.length && !selectedReclamation.autre_nature" class="text-muted small">
-                                        Aucun motif spécifié
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-12">
-                            <div class="pro-info-card">
-                                <label class="pro-label">Description détaillée</label>
-                                <div class="pro-description">
-                                    {{selectedReclamation.description || 'Aucune description fournie.'}}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Preuves / Images -->
-                        <div class="col-md-12" *ngIf="selectedReclamation.preuves?.length">
-                            <div class="pro-info-card">
-                                <label class="pro-label">Pièces Jointes / Preuves ({{selectedReclamation.preuves.length}})</label>
-                                <div class="evidence-grid mt-3">
-                                    <div class="evidence-item" *ngFor="let file of selectedReclamation.preuves">
-                                        <div class="evidence-preview bg-light position-relative">
-                                            <ng-container *ngIf="isImage(file); else nonImage">
-                                                <img [src]="getFileUrl(file)" style="width: 100%; height: 100%; object-fit: cover;" alt="Preuve" onerror="this.src='assets/images/placeholder.jpg'; this.onerror=null;">
-                                            </ng-container>
-                                            <ng-template #nonImage>
-                                                <i class="bi bi-file-earmark-text fs-1 text-muted"></i>
-                                            </ng-template>
-                                        </div>
-                                        <div class="evidence-meta text-center pb-2">
-                                            <span class="file-name" [title]="file">{{file}}</span>
-                                            <a [href]="getFileUrl(file)" target="_blank" class="btn btn-sm btn-link text-decoration-none fw-bold p-0 mt-1 d-block" style="font-size: 0.8rem;"><i class="bi bi-eye"></i> Voir le fichier</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Assignment Section -->
-                        <div class="col-md-12">
-                            <div class="assignment-card p-4 rounded-4 mt-2">
-                                <label class="pro-label mb-3 fw-bold text-primary"><i class="bi bi-person-plus-fill me-2"></i>Affecter à un conventionné</label>
-                                <div class="row g-3 align-items-center">
-                                    <div class="col-md-8">
-                                        <select class="form-select status-select" [(ngModel)]="selectedConventionne">
-                                            <option value="">-- Sélectionner un conventionné --</option>
-                                            <option *ngFor="let conv of conventionnes" [value]="conv._id">
-                                                {{conv.prenom}} {{conv.nom}} ({{conv.email}})
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-primary w-100 rounded-pill py-2 fw-bold" 
-                                                [disabled]="!selectedConventionne || assigning"
-                                                (click)="assignRec()">
-                                            <span *ngIf="!assigning">AFFECTER MAINTENANT</span>
-                                            <span *ngIf="assigning" class="spinner-border spinner-border-sm"></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="ms-auto d-flex align-items-center gap-3">
+                            <span class="mshell-status-pill" [ngClass]="'status-' + selectedReclamation?.statut">
+                                <i class="bi me-1"
+                                   [class.bi-hourglass-split]="selectedReclamation?.statut === 'deposee' || selectedReclamation?.statut === 'en_attente'"
+                                   [class.bi-arrow-repeat]="selectedReclamation?.statut === 'en_cours'"
+                                   [class.bi-check-circle-fill]="selectedReclamation?.statut === 'traitee' || selectedReclamation?.statut === 'resolue'"
+                                   [class.bi-x-circle-fill]="selectedReclamation?.statut === 'rejete' || selectedReclamation?.statut === 'fermee'"
+                                   [class.bi-question-circle-fill]="selectedReclamation?.statut === 'demande_complement'"
+                                ></i>
+                                {{getStatusLabel(selectedReclamation?.statut)}}
+                            </span>
+                            <button class="mshell-close-btn" (click)="closeModal()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
-                
-                <div class="modal-footer pro-footer">
-                    <button class="btn-pro btn-pro-secondary" (click)="closeModal()">
-                        <i class="bi bi-arrow-left me-2"></i>RETOUR
+
+                <!-- === BODY === -->
+                <div class="mshell-body" *ngIf="selectedReclamation" id="print-area">
+
+                    <!-- Section 1: User & Classification -->
+                    <div class="mshell-section-title"><i class="bi bi-person-vcard me-2"></i>Informations du Plaignant</div>
+                    <div class="mshell-grid-2 mb-4">
+                        <div class="mcard">
+                            <div class="mcard-icon-wrap blue"><i class="bi bi-person-fill"></i></div>
+                            <div class="mcard-body">
+                                <div class="mcard-label">Identité</div>
+                                <div class="mcard-value">{{selectedReclamation.user?.prenom}} {{selectedReclamation.user?.nom}}</div>
+                                <div class="mcard-meta mt-2">
+                                    <div class="mcard-meta-row" *ngIf="selectedReclamation.user?.email">
+                                        <i class="bi bi-envelope"></i><span>{{selectedReclamation.user?.email}}</span>
+                                    </div>
+                                    <div class="mcard-meta-row" *ngIf="selectedReclamation.user?.telephone">
+                                        <i class="bi bi-telephone"></i><span>{{selectedReclamation.user?.telephone}}</span>
+                                    </div>
+                                    <div class="mcard-meta-row" *ngIf="selectedReclamation.user?.adresse?.ville">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <span>{{selectedReclamation.user?.adresse?.ville}}, {{selectedReclamation.user?.adresse?.region}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mcard">
+                            <div class="mcard-icon-wrap purple"><i class="bi bi-tags-fill"></i></div>
+                            <div class="mcard-body">
+                                <div class="mcard-label">Classification</div>
+                                <div class="mcard-value">{{selectedReclamation.type || 'Réclamation'}}</div>
+                                <div class="mcard-meta mt-2">
+                                    <div class="mcard-meta-row"><i class="bi bi-grid"></i><span>{{selectedReclamation.secteur}}</span></div>
+                                    <div class="mcard-meta-row"><i class="bi bi-calendar3"></i><span>{{selectedReclamation.dateCreation | date:'dd MMMM yyyy, HH:mm'}}</span></div>
+                                    <div class="mcard-meta-row"><i class="bi bi-geo"></i><span>Gouvernorat: {{selectedReclamation.gouvernorat}}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Operator & Description -->
+                    <div class="mshell-section-title"><i class="bi bi-building me-2"></i>Détails de l'Incident</div>
+                    <div class="mshell-grid-2 mb-4">
+                        <div class="mcard">
+                            <div class="mcard-icon-wrap green"><i class="bi bi-shop"></i></div>
+                            <div class="mcard-body">
+                                <div class="mcard-label">Opérateur & Activité</div>
+                                <div class="mcard-value">{{selectedReclamation.operateur || 'Non spécifié'}}</div>
+                                <div class="mcard-meta mt-2">
+                                    <div class="mcard-meta-row"><i class="bi bi-info-circle"></i><span>{{selectedReclamation.activite || 'Activité non spécifiée'}}</span></div>
+                                    <div class="mcard-meta-row" *ngIf="selectedReclamation.sous_secteur"><i class="bi bi-grid-3x3-gap"></i><span>{{selectedReclamation.sous_secteur}}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mcard">
+                            <div class="mcard-icon-wrap orange"><i class="bi bi-exclamation-diamond-fill"></i></div>
+                            <div class="mcard-body">
+                                <div class="mcard-label">Motifs & Natures</div>
+                                <div class="d-flex flex-wrap gap-2 mt-3" *ngIf="selectedReclamation.natures?.length || selectedReclamation.autre_nature; else noNatures">
+                                    <span *ngFor="let nat of selectedReclamation.natures" class="motif-chip">{{nat}}</span>
+                                    <span *ngIf="selectedReclamation.autre_nature" class="motif-chip autre">{{selectedReclamation.autre_nature}}</span>
+                                </div>
+                                <ng-template #noNatures><p class="text-muted small mt-2 mb-0">Aucun motif spécifié.</p></ng-template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="description-block mb-4">
+                        <div class="description-quote-icon"><i class="bi bi-quote"></i></div>
+                        <p class="description-text">{{selectedReclamation.description || 'Aucune description fournie.'}}</p>
+                    </div>
+
+                    <!-- Section Evidence -->
+                    <ng-container *ngIf="selectedReclamation.preuves?.length">
+                        <div class="mshell-section-title"><i class="bi bi-paperclip me-2"></i>Pièces Jointes <span class="count-badge">{{selectedReclamation.preuves.length}}</span></div>
+                        <div class="evidence-grid-pro mb-4">
+                            <a *ngFor="let file of selectedReclamation.preuves" [href]="getFileUrl(file)" target="_blank" class="evidence-card-pro">
+                                <div class="ev-thumb" *ngIf="isImage(file)">
+                                    <img [src]="getFileUrl(file)" alt="Preuve">
+                                    <div class="ev-overlay"><i class="bi bi-zoom-in"></i></div>
+                                </div>
+                                <div class="ev-thumb ev-doc" *ngIf="!isImage(file)"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                                <div class="ev-info">
+                                    <span class="ev-name" [title]="file">{{file}}</span>
+                                    <span class="ev-action">Ouvrir <i class="bi bi-arrow-up-right-square ms-1"></i></span>
+                                </div>
+                            </a>
+                        </div>
+                    </ng-container>
+
+                    <!-- Section AFFECTATION - SPECIAL FOR THIS VIEW -->
+                    <div class="mshell-section-title"><i class="bi bi-person-plus-fill me-2"></i>Affectation au Partenaire Conventionné</div>
+                    <div class="card premium-card p-4 mb-2 assignment-special-card">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-8">
+                                <label class="mshell-header-eyebrow text-dark mb-2 d-block">Choisir un conventionné</label>
+                                <select class="form-select status-select-pro" [(ngModel)]="selectedConventionne">
+                                    <option value="">-- Sélectionner un partenaire --</option>
+                                    <option *ngFor="let conv of conventionnes" [value]="conv._id">
+                                        {{conv.prenom}} {{conv.nom}} ({{conv.email}})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="mfooter-btn confirm-pro w-100" 
+                                        [disabled]="!selectedConventionne || assigning"
+                                        (click)="assignRec()">
+                                    <i class="bi bi-send-check-fill me-2" *ngIf="!assigning"></i>
+                                    <span *ngIf="!assigning">AFFECTER MAINTENANT</span>
+                                    <span *ngIf="assigning" class="spinner-border spinner-border-sm me-2"></span>
+                                    <span *ngIf="assigning">TRAITEMENT...</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- === FOOTER === -->
+                <div class="mshell-footer">
+                    <button class="mfooter-btn secondary" (click)="closeModal()">
+                        <i class="bi bi-arrow-left"></i> Fermer
                     </button>
-                    <button class="btn-pro btn-pro-print" (click)="printReclamation()">
-                        <i class="bi bi-printer me-2"></i>IMPRIMER PDF
-                    </button>
+                    <div class="mfooter-right-actions">
+                        <button class="mfooter-btn ghost" (click)="printReclamation()">
+                            <i class="bi bi-printer"></i> Imprimer
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -211,96 +232,89 @@ import { AdminService } from '../../../../services/admin.service';
         .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
 
-        /* Pro Modal Styles */
+        /* ========================= MODAL SHELL PREMIUM ========================= */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px);
+            background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(20px) saturate(180%);
             display: flex; align-items: center; justify-content: center;
-            z-index: 2000; animation: fadeInOverlay 0.4s ease;
+            z-index: 2000; animation: fadeInOverlay 0.4s ease; padding: 16px;
         }
         @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
-
-        .pro-modal {
-            background: #ffffff; border-radius: 24px; width: 95%; max-width: 700px;
-            overflow: hidden; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            animation: slideUpScale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        .modal-shell {
+            background: #ffffff; border-radius: 28px; width: 100%; max-width: 800px;
+            max-height: 92vh; display: flex; flex-direction: column;
+            box-shadow: 0 60px 120px -20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.15);
+            animation: modalPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;
         }
-        @keyframes slideUpScale { 
-            from { opacity: 0; transform: translateY(30px) scale(0.95); } 
-            to { opacity: 1; transform: translateY(0) scale(1); } 
-        }
-
-        .pro-header {
-            background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0;
-            display: flex; align-items: center; position: relative;
-        }
-        .header-icon {
-            width: 48px; height: 48px; background: #3b82f6; border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 1.5rem; margin-right: 20px;
-            box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.4);
-        }
-        .header-title h5 { color: #1e293b; font-size: 1.25rem; font-weight: 700; }
-        .btn-close-pro {
-            position: absolute; right: 24px; top: 24px;
-            background: #f1f5f9; border: none; width: 36px; height: 36px;
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            color: #64748b; transition: all 0.2s; cursor: pointer;
-        }
-        .btn-close-pro:hover { background: #e2e8f0; color: #1e293b; transform: rotate(90deg); }
-
-        .pro-body { background: #fff; padding: 32px !important; }
-        .pro-info-card { 
-            background: #f8fafc; padding: 20px; border-radius: 16px; 
-            border: 1px solid #f1f5f9; transition: all 0.3s;
-        }
-        .pro-info-card:hover { transform: translateY(-2px); border-color: #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        .pro-label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
-        .pro-value { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
-        .pro-badge { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+        @keyframes modalPop { from { opacity: 0; transform: translateY(50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         
-        .pro-description {
-            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
-            padding: 20px; color: #475569; line-height: 1.7; font-size: 1rem;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); margin-top: 10px;
-        }
-
-        .pro-footer {
-            padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0;
-            display: flex; justify-content: flex-end;
-        }
-        .btn-pro {
-            padding: 12px 24px; border-radius: 14px; font-weight: 700; font-size: 0.85rem;
-            letter-spacing: 0.5px; transition: all 0.3s; border: none; display: flex; align-items: center;
-        }
-        .btn-pro-secondary { background: #64748b; color: white; }
-        .btn-pro-secondary:hover { background: #475569; transform: translateX(-4px); }
-        .btn-pro-print { background: #10b981; color: white; border: none; }
-        .btn-pro-print:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
-
-        .nature-tag { background: #fff; border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; color: #475569; }
-        .nature-tag.autre { border-style: dashed; border-color: #3b82f6; color: #3b82f6; }
-        .pro-badge.light { background: #f1f5f9; color: #475569; }
+        .mshell-header { position: relative; overflow: hidden; flex-shrink: 0; padding: 24px 32px; }
+        .mshell-header-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1d4ed8 100%); }
+        .mshell-header-content { position: relative; z-index: 1; display: flex; align-items: center; gap: 20px; }
+        .mshell-icon-wrap { width: 50px; height: 50px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; }
+        .mshell-header-eyebrow { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #94a3b8; margin-bottom: 2px; }
+        .mshell-header-code { font-size: 1.25rem; font-weight: 800; color: #fff; letter-spacing: 2px; }
+        .mshell-close-btn { width: 36px; height: 36px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; transition: all 0.3s; }
+        .mshell-close-btn:hover { background: rgba(255,255,255,0.25); transform: rotate(90deg); }
         
-        .assignment-card { background: #eff6ff; border: 2px solid #bfdbfe; }
-        .status-select { border-radius: 12px; padding: 10px 15px; border: 1.5px solid #d1d5db; font-weight: 500; }
+        .mshell-status-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 1px solid transparent; }
+        .mshell-status-pill.status-deposee, .mshell-status-pill.status-en_attente { background: rgba(251,191,36,0.2); color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+        .mshell-status-pill.status-en_cours { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: rgba(59,130,246,0.3); }
+        .mshell-status-pill.status-traitee, .mshell-status-pill.status-resolue { background: rgba(34,197,94,0.2); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+        .mshell-status-pill.status-rejete, .mshell-status-pill.status-fermee { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.3); }
+        .mshell-status-pill.status-demande_complement { background: rgba(168,85,247,0.2); color: #c084fc; border-color: rgba(168,85,247,0.3); }
 
-        .evidence-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-        .evidence-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; transition: all 0.2s; }
-        .evidence-item:hover { border-color: #3b82f6; transform: scale(1.02); }
-        .evidence-preview { height: 100px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f5f9; }
-        .evidence-meta { padding: 8px 12px; }
-        .file-name { font-size: 0.75rem; color: #64748b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mshell-body { overflow-y: auto; padding: 28px; flex: 1; background: #f8fafc; }
+        .mshell-section-title { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 12px; display: flex; align-items: center; }
+        .mshell-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        
+        .mcard { background: #ffffff; border: 1px solid #e8edf5; border-radius: 18px; padding: 18px; display: flex; gap: 14px; align-items: flex-start; transition: all 0.3s; }
+        .mcard:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -10px rgba(0,0,0,0.08); border-color: #c7d7f5; }
+        .mcard-icon-wrap { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .mcard-icon-wrap.blue { background: #dbeafe; color: #2563eb; }
+        .mcard-icon-wrap.purple { background: #ede9fe; color: #7c3aed; }
+        .mcard-icon-wrap.green { background: #dcfce7; color: #16a34a; }
+        .mcard-icon-wrap.orange { background: #ffedd5; color: #ea580c; }
+        .mcard-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+        .mcard-value { font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.25; }
+        .mcard-meta-row { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #64748b; margin-top: 4px; }
+        
+        .description-block { background: #ffffff; border: 1px solid #e8edf5; border-radius: 18px; padding: 20px; position: relative; overflow: hidden; }
+        .description-block::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #3b82f6; }
+        .description-quote-icon { font-size: 2.5rem; color: #dbeafe; opacity: 0.5; height: 30px; line-height: 1; }
+        .description-text { color: #334155; line-height: 1.7; font-size: 0.92rem; margin: 0; }
+
+        .motif-chip { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; }
+        .motif-chip.autre { background: #ede9fe; border-color: #c4b5fd; color: #7c3aed; border-style: dashed; }
+
+        .assignment-special-card { background: #eff6ff !important; border: 2px solid #bfdbfe !important; border-radius: 20px !important; }
+        .status-select-pro { padding: 12px 16px; border-radius: 14px; border: 1.5px solid #d1d5db; font-weight: 600; font-size: 0.9rem; }
+        .confirm-pro { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 12px; border-radius: 14px; font-weight: 800; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: all 0.3s; }
+        .confirm-pro:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4); }
+
+        .mshell-footer { padding: 18px 32px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .mfooter-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+        .mfooter-btn.secondary { background: #f1f5f9; color: #475569; }
+        .mfooter-btn.ghost { background: transparent; border: 1.5px solid #e2e8f0; color: #64748b; }
+        .mfooter-btn.ghost:hover { background: #f8fafc; }
+
+        .evidence-grid-pro { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+        .evidence-card-pro { background: #fff; border: 1px solid #e8edf5; border-radius: 14px; overflow: hidden; text-decoration: none; display: block; }
+        .ev-thumb { height: 90px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .ev-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .ev-doc { font-size: 2rem; color: #64748b; }
+        .ev-info { padding: 8px; border-top: 1px solid #f1f5f9; }
+        .ev-name { font-size: 0.68rem; font-weight: 700; color: #334155; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ev-action { font-size: 0.65rem; color: #3b82f6; font-weight: 600; }
+        .count-badge { background: #3b82f6; color: white; padding: 2px 6px; border-radius: 50px; font-size: 0.6rem; margin-left: 6px; }
 
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
             .modal-overlay { background: white; backdrop-filter: none; }
-            .pro-modal { box-shadow: none; border: none; width: 100% !important; max-width: none !important; }
-            .pro-footer, .btn-close-pro { display: none !important; }
-            .pro-info-card { border: 1px solid #e2e8f0 !important; page-break-inside: avoid; }
+            .modal-shell { box-shadow: none; border: none; width: 100% !important; max-width: none !important; }
+            .mshell-footer, .mshell-close-btn { display: none !important; }
         }
     `]
 })
@@ -317,20 +331,37 @@ export class AssignReclamationComponent implements OnInit {
     constructor(private adminService: AdminService) { }
 
     ngOnInit() {
+        // Load from cache for "direct" feel
+        const cachedRecs = localStorage.getItem('otic_admin_pending_recs');
+        const cachedConvs = localStorage.getItem('otic_admin_conventionnes');
+        
+        if (cachedRecs) {
+            try { this.reclamations = JSON.parse(cachedRecs); } catch (e) { }
+        }
+        if (cachedConvs) {
+            try { this.conventionnes = JSON.parse(cachedConvs); } catch (e) { }
+        }
+
         this.loadData();
         this.loadConventionnes();
     }
 
     loadData() {
         this.adminService.getPendingReclamations().subscribe({
-            next: (data) => this.reclamations = data,
+            next: (data) => {
+                this.reclamations = data;
+                localStorage.setItem('otic_admin_pending_recs', JSON.stringify(data));
+            },
             error: (err) => console.error(err)
         });
     }
 
     loadConventionnes() {
         this.adminService.getConventionnes().subscribe({
-            next: (data) => this.conventionnes = data,
+            next: (data) => {
+                this.conventionnes = data;
+                localStorage.setItem('otic_admin_conventionnes', JSON.stringify(data));
+            },
             error: (err) => console.error('Error fetching conventionnes:', err)
         });
     }
@@ -376,6 +407,35 @@ export class AssignReclamationComponent implements OnInit {
         });
     }
 
+    getStatusLabel(status: string): string {
+        const labels:any = {
+            'deposee': 'Déposée',
+            'en_attente': 'En attente',
+            'en_cours': 'En cours',
+            'affectee_conventionne': 'Affectée',
+            'traitee': 'Traitée',
+            'resolue': 'Résolue',
+            'rejete': 'Rejetée',
+            'demande_complement': 'Complément',
+            'fermee': 'Fermée'
+        };
+        return labels[status] || status;
+    }
+
+    getStatusClass(status: string): string {
+        switch (status) {
+            case 'en_attente': return 'bg-warning';
+            case 'deposee': return 'bg-warning';
+            case 'en_cours': return 'bg-info';
+            case 'affectee_conventionne': return 'bg-primary';
+            case 'demande_complement': return 'bg-primary';
+            case 'resolue': return 'bg-success';
+            case 'fermee': return 'bg-secondary';
+            case 'rejete': return 'bg-danger';
+            default: return 'bg-dark';
+        }
+    }
+
     printReclamation() {
         window.print();
     }
@@ -387,9 +447,7 @@ export class AssignReclamationComponent implements OnInit {
 
     getFileUrl(file: string): string {
         if (!file) return '';
-        if (file.startsWith('http://') || file.startsWith('https://') || file.startsWith('data:image')) {
-            return file;
-        }
+        if (file.startsWith('http')) return file;
         return `http://localhost:5000/uploads/${encodeURIComponent(file)}`;
     }
 }

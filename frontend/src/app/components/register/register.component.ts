@@ -19,6 +19,7 @@ export class RegisterComponent {
         prenom: '',
         email: '',
         telephone: '',
+        cin: '',
         password: '',
         adresse: {
             ville: '',
@@ -77,5 +78,10 @@ export class RegisterComponent {
                 this.error = err.error.msg || 'Registration failed';
             }
         });
+    }
+
+    socialLogin(platform: string) {
+        console.log(`Redirecting to ${platform} register...`);
+        window.location.href = `http://localhost:5000/api/auth/${platform}`;
     }
 }

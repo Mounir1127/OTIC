@@ -11,8 +11,10 @@
             </button>
             <div class="collapse navbar-collapse" id="navContent">
                 <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link px-3" href="#about">À propos</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="#services">Nos Services</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="#impact">Notre Impact</a></li>
+                    <li class="nav-item"><a class="nav-link px-3" href="#eaux-minerales">Eaux Minérales</a></li>
                     <li class="nav-item ms-lg-4">
                         <a class="btn btn-premium btn-premium-primary border shadow-sm" style="color: #0061f2;"
                             routerLink="/login">Se Connecter</a>
@@ -48,6 +50,42 @@
             </div>
         </div>
     </header>
+
+    <!-- About Section -->
+    <section id="about" class="py-5 bg-white overflow-hidden">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <div class="section-tag mb-3 px-3 py-1 rounded-pill bg-primary bg-opacity-10 text-primary display-inline shadow-sm" style="display: inline-block; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Qui sommes-nous ?</div>
+                    <h2 class="fw-bold display-5 mb-4" style="color: #2d3436;">OTIC</h2>
+                    <h5 class="text-primary text-uppercase fw-bold mb-4" style="letter-spacing: 1px;">Organisation Tunisienne pour Informer le Consommateur</h5>
+                    <div class="about-content">
+                        <p class="lead text-secondary mb-4" style="line-height: 1.8;">
+                            L’OTIC est une organisation non gouvernementale fondée en vertu du décret n°88 de l’année 2011, daté du 24 septembre 2011, et publiée dans le Journal Officiel le 1er septembre 2012.
+                        </p>
+                        <div class="p-4 bg-light rounded-4 border-start border-4 border-primary shadow-sm">
+                            <p class="mb-0 fs-5 text-dark italic font-serif" style="font-style: italic;">
+                                "Depuis sa création, l’organisation s’engage à être la voix du consommateur tunisien, en défendant ses droits et en promouvant une consommation responsable et éclairée."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 d-none d-lg-block">
+                    <div class="position-relative p-5">
+                        <div class="about-image-stack text-center">
+                            <div class="image-box primary-shadow p-5 bg-white rounded-circle shadow-lg d-inline-block">
+                                <img src="logo.png" class="img-fluid" alt="OTIC Logo Large" style="width: 200px; animation: float 6s ease-in-out infinite;">
+                            </div>
+                            <div class="experience-badge shadow-lg position-absolute top-0 end-0 bg-primary text-white p-4 rounded-4 text-center" style="transform: rotate(5deg);">
+                                <div class="number h2 fw-bold mb-0">12+</div>
+                                <div class="text small text-uppercase fw-bold">Ans d'Engagement</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Services Section -->
     <section id="services" class="py-5 mt-n5">
@@ -106,6 +144,17 @@
         </div>
     </section>
 
+    <!-- Mineral Waters Section -->
+    <section id="eaux-minerales" class="py-5 bg-white">
+        <div class="container overflow-hidden">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold h1">Eaux Minérales en Tunisie</h2>
+                <p class="text-muted">Comparez la qualité et la composition des eaux minérales pour faire le meilleur choix.</p>
+            </div>
+            <app-mineral-waters [hideTitle]="true"></app-mineral-waters>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer-pro">
         <div class="container">
@@ -125,6 +174,7 @@
                     <ul class="list-unstyled">
                         <li><a href="#" class="footer-link small">Accueil</a></li>
                         <li><a href="#services" class="footer-link small">Services</a></li>
+                        <li><a href="#eaux-minerales" class="footer-link small">Eaux Minérales</a></li>
                         <li><a href="/login" class="footer-link small">Espace Client</a></li>
                     </ul>
                 </div>
@@ -150,4 +200,8 @@
             </div>
         </div>
     </footer>
+    <!-- Back to Top / Home Button -->
+    <a (click)="scrollToTop()" class="back-to-top" [class.show]="isScrolled" title="Retour en haut">
+        <i class="bi bi-house-door-fill"></i>
+    </a>
 </div>

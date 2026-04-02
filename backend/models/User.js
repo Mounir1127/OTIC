@@ -20,13 +20,23 @@ const UserSchema = new mongoose.Schema({
     },
     cin: {
         type: String,
-        required: false,
-        unique: false,
+        required: true,
+        unique: true,
         sparse: true,
     },
     password: {
         type: String,
-        required: true,
+        required: false,
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true,
+    },
+    facebookId: {
+        type: String,
+        unique: true,
+        sparse: true,
     },
     role: {
         type: String,
@@ -37,9 +47,9 @@ const UserSchema = new mongoose.Schema({
         default: null,
     },
     adresse: {
-        ville: { type: String, required: true },
-        region: { type: String, required: true },
-        codePostal: { type: String, required: true },
+        ville: { type: String, required: false },
+        region: { type: String, required: false },
+        codePostal: { type: String, required: false },
     },
 });
 
