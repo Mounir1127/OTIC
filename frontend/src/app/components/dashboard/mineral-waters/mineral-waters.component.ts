@@ -275,11 +275,29 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
+    // 1. Try to load from localStorage for truly instant UI on page refresh
+    const cached = localStorage.getItem('otic_water_brands');
+    if (cached) {
+      try {
+        this.brands = JSON.parse(cached);
+        this.filteredBrands = [...this.brands];
+        this.calculateBasicStats();
+        // Small delay to ensure DOM is ready for charts
+        setTimeout(() => this.initCharts(), 100);
+      } catch (e) { console.error('Error parsing cached water brands', e); }
+    }
+
+    // 2. Fetch from API (will use service cache if available)
     this.api.getWaterBrands().subscribe({
       next: (data) => {
         this.brands = data;
         this.filteredBrands = [...this.brands];
         this.calculateBasicStats();
+        
+        // Save to localStorage for next time
+        localStorage.setItem('otic_water_brands', JSON.stringify(data));
+        
+        // Re-init charts with fresh data
         setTimeout(() => this.initCharts(), 100);
       },
       error: (err) => console.error('Error fetching water brands:', err)

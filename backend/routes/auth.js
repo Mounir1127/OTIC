@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const mongoose = require("mongoose");
 const passport = require('passport');
+const { sendWelcomeEmail, sendResetLinkEmail } = require("../utils/emailService");
 
 // @route   POST api/auth/register
 // @desc    Register user
@@ -65,6 +66,15 @@ router.post("/register", async (req, res) => {
         console.log('Saving user to database...');
         await user.save();
         console.log('User saved successfully:', user._id);
+
+        // Send welcome email (non-blocking preferred, but we'll await for safety or just call it)
+        try {
+            sendWelcomeEmail(user.email, { nom: user.nom, prenom: user.prenom })
+                .then(res => console.log('Welcome email result:', res))
+                .catch(err => console.error('Welcome email failed:', err));
+        } catch (emailErr) {
+            console.error('Error initiating welcome email:', emailErr);
+        }
 
         const payload = {
             user: {
@@ -200,6 +210,108 @@ router.post("/change-password", require("../middleware/auth"), async (req, res) 
 
         await user.save();
         res.json({ msg: "Mot de passe changé avec succès" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Erreur serveur");
+    }
+});
+
+// @route   PUT api/auth/update-profile
+// @desc    Update user profile
+// @access  Private
+router.put("/update-profile", require("../middleware/auth"), async (req, res) => {
+    const { nom, prenom, email, telephone, cin, adresse } = req.body;
+
+    try {
+        let user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: "User not found" });
+
+        // Check if email is already taken by another user
+        if (email && email !== user.email) {
+            const emailExists = await User.findOne({ email });
+            if (emailExists) return res.status(400).json({ msg: "Cet email est déjà utilisé." });
+            user.email = email;
+        }
+
+        if (nom) user.nom = nom;
+        if (prenom) user.prenom = prenom;
+        if (telephone) user.telephone = telephone;
+        if (cin) user.cin = cin;
+        if (adresse) {
+            if (adresse.ville) user.adresse.ville = adresse.ville;
+            if (adresse.region) user.adresse.region = adresse.region;
+            if (adresse.codePostal) user.adresse.codePostal = adresse.codePostal;
+        }
+
+        await user.save();
+        res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Erreur serveur");
+    }
+});
+
+// @route   POST api/auth/forgot-password
+// @desc    Request a reset code
+// @access  Public
+router.post("/forgot-password", async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await User.findOne({ email: { $regex: new RegExp("^" + email.trim() + "$", "i") } });
+        if (!user) {
+            console.log(`[ForgotPass] No user found for: ${email}`);
+            return res.status(404).json({ msg: "Aucun utilisateur trouvé avec cet email" });
+        }
+        
+        console.log(`[ForgotPass] Generating code for: ${user.email}`);
+
+        // Generate 6 digit random code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        user.resetPasswordCode = code;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+        await user.save();
+
+        // Send reset link email
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:4300'}/reset-password?email=${user.email}&token=${code}`;
+        
+        await sendResetLinkEmail(user.email, resetLink);
+
+        res.json({ msg: "Lien de réinitialisation envoyé par email" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Erreur serveur");
+    }
+});
+
+// @route   POST api/auth/reset-password
+// @desc    Reset password using the code
+// @access  Public
+router.post("/reset-password", async (req, res) => {
+    const { email, code, newPassword } = req.body;
+    try {
+        const user = await User.findOne({ 
+            email: { $regex: new RegExp("^" + email.trim() + "$", "i") },
+            resetPasswordCode: code,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ msg: "Lien invalide ou expiré" });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+
+        // Clear reset fields
+        user.resetPasswordCode = null;
+        user.resetPasswordExpires = null;
+
+        await user.save();
+
+        res.json({ msg: "Mot de passe réinitialisé avec succès" });
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Erreur serveur");

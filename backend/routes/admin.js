@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
+const Conventionne = require('../models/Conventionne');
 const Reclamation = require('../models/Reclamation');
 const Notification = require('../models/Notification');
 const Governorate = require('../models/Governorate');
 const bcrypt = require('bcryptjs');
+const { sendAssignmentEmail, sendWelcomeEmail } = require('../utils/emailService');
 
 // Helper to log admin actions
 const logAdminAction = (msg) => {
@@ -29,14 +31,28 @@ const superAdminAuth = async (req, res, next) => {
 // Middleware to check if user is admin or super_admin
 const adminAuth = async (req, res, next) => {
     try {
+        console.log(`[AdminAuth] checking permissions for user ID: ${req.user ? req.user.id : 'undefined'}`);
+        if (!req.user || !req.user.id) {
+            console.warn('[AdminAuth] No user ID in request');
+            return res.status(401).json({ msg: 'No user ID, authorization denied' });
+        }
+
         const user = await User.findById(req.user.id);
-        if (!user || (user.role !== 'super_admin' && user.role !== 'admin_regional')) {
+        if (!user) {
+            console.warn(`[AdminAuth] User not found in DB: ${req.user.id}`);
+            return res.status(403).json({ msg: 'User not found' });
+        }
+
+        console.log(`[AdminAuth] User found: ${user.email}, Role: ${user.role}`);
+        if (user.role !== 'super_admin' && user.role !== 'admin_regional') {
+            console.warn(`[AdminAuth] Access denied for role: ${user.role}`);
             return res.status(403).json({ msg: 'Access denied. Admin only.' });
         }
+        
         next();
     } catch (err) {
-        console.error('AdminAuth Error:', err.message);
-        res.status(500).send('Server error');
+        console.error('AdminAuth Error Details:', err);
+        res.status(500).json({ msg: 'AdminAuth Server Error: ' + err.message });
     }
 };
 
@@ -81,14 +97,19 @@ router.get('/consumers', [auth, adminAuth], async (req, res) => {
 });
 
 // @route   GET api/admin/conventionnes
-// @desc    Get all conventionne partners
+// @desc    Get all conventionne partners (not a login user)
 // @access  Private (Admin/Super Admin)
 router.get('/conventionnes', [auth, adminAuth], async (req, res) => {
     try {
-        const conventionnes = await User.find({ role: 'conventionne' }).select('-password');
+        console.log(`[GET Conventionnes] Fetching all for role: ${req.user.role}`);
+        
+        // As requested: both super_admin AND regional_admin can see ALL partners in the collection
+        const conventionnes = await Conventionne.find({}).sort({ dateCreation: -1 });
+        
         res.json(conventionnes);
     } catch (err) {
-        res.status(500).send('Server error');
+        logAdminAction(`GET Conventionnes Error: ${err.message}`);
+        res.status(500).json({ msg: 'Server error: ' + err.message });
     }
 });
 
@@ -197,7 +218,7 @@ router.put('/reclamation/:id/mark-read', [auth, adminAuth], async (req, res) => 
 });
 
 // @route   PUT api/admin/reclamation/:id/assign
-// @desc    Assign reclamation to a conventionne
+// @desc    Assign reclamation to a conventionne partner
 // @access  Private (Admin/Super Admin)
 router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
     try {
@@ -206,8 +227,8 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
 
         if (!reclamation) return res.status(404).json({ msg: 'Reclamation not found' });
 
-        const conventionne = await User.findById(conventionneId).select('nom prenom');
-        if (!conventionne) return res.status(404).json({ msg: 'Conventionné introuvable' });
+        const partner = await Conventionne.findById(conventionneId).select('nom email');
+        if (!partner) return res.status(404).json({ msg: 'Partenaire conventionné introuvable' });
 
         reclamation.conventionne = conventionneId;
         reclamation.statut = 'affectee_conventionne';
@@ -216,15 +237,25 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
         reclamation.history.push({
             date: Date.now(),
             statut: 'affectee_conventionne',
-            action: `Réclamation affectée au conventionné : ${conventionne.prenom} ${conventionne.nom}`,
+            action: `Réclamation affectée au partenaire : ${partner.nom}`,
             updatedBy: req.user.id
         });
 
         await reclamation.save();
 
+        // Send Email to the assigned partner (in background to not block the response)
+        const emailTo = partner.email;
+        if (emailTo) {
+            sendAssignmentEmail(emailTo, reclamation, partner).catch(emailErr => {
+                console.error('[AssignEmail] Background sending failed:', emailErr.message);
+            });
+        } else {
+            console.warn('[AssignEmail] No email found for partner:', partner.nom);
+        }
+
         res.json(reclamation);
     } catch (err) {
-        console.error(err.message);
+        console.error('Assign Error:', err.message);
         res.status(500).send('Server error');
     }
 });
@@ -255,9 +286,64 @@ router.post('/create-admin', [auth, superAdminAuth], async (req, res) => {
         user.password = await bcrypt.hash(password, salt);
 
         await user.save();
+
+        // Send welcome email to the new admin
+        try {
+            sendWelcomeEmail(user.email, { nom: user.nom, prenom: user.prenom })
+                .then(res => console.log('[AdminCreate] Welcome email sent to admin:', user.email))
+                .catch(err => console.error('[AdminCreate] Welcome email failed:', err));
+        } catch (emailErr) {
+            console.error('[AdminCreate] Error initiating email:', emailErr);
+        }
+
         res.json({ msg: 'Admin created successfully', user: { id: user.id, email: user.email, role: user.role } });
     } catch (err) {
         console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   POST api/admin/create-conventionne
+// @desc    Create a conventionne partner (not a login user)
+// @access  Private (Admin/Super Admin)
+router.post('/create-conventionne', [auth, adminAuth], async (req, res) => {
+    const { nom, email, region } = req.body;
+
+    try {
+        console.log(`[Partner Creation] Attempting for ${email} in region ${region}`);
+        
+        let existing = await Conventionne.findOne({ email: email.trim().toLowerCase() });
+        if (existing) {
+            return res.status(400).json({ msg: 'Un partenaire existe déjà avec cet email' });
+        }
+
+        const creator = await User.findById(req.user.id);
+        
+        const newPartner = new Conventionne({
+            nom,
+            email: email.trim().toLowerCase(),
+            region: region || (creator.role === 'admin_regional' ? creator.adresse?.ville : null),
+            createdBy: req.user.id
+        });
+
+        await newPartner.save();
+        
+        console.log(`[Partner Creation] Success for ${email}`);
+        res.json({ msg: 'Partenaire créé avec succès', partner: newPartner });
+    } catch (err) {
+        console.error('Partner Creation Error:', err);
+        res.status(500).json({ msg: 'Server error: ' + err.message });
+    }
+});
+
+// @route   DELETE api/admin/conventionne/:id
+// @desc    Delete a conventionne partner
+// @access  Private (Admin/Super Admin)
+router.delete('/conventionne/:id', [auth, adminAuth], async (req, res) => {
+    try {
+        await Conventionne.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Partenaire supprimé' });
+    } catch (err) {
         res.status(500).send('Server error');
     }
 });

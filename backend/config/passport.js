@@ -1,6 +1,7 @@
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const User = require('../models/User');
+const { sendWelcomeEmail } = require('../utils/emailService');
 
 module.exports = function (passport) {
     passport.use(new GoogleStrategy({
@@ -40,6 +41,11 @@ module.exports = function (passport) {
                 photoProfil: profile.photos && profile.photos[0] ? profile.photos[0].value : null
             });
             await user.save();
+
+            // Send welcome email in background
+            sendWelcomeEmail(user.email, { nom: user.nom, prenom: user.prenom })
+                .catch(e => console.error('Social(Google) Welcome Email Failed:', e));
+
             return done(null, user);
         } catch (err) {
             console.error('Google Auth Error:', err);
@@ -84,6 +90,11 @@ module.exports = function (passport) {
                 photoProfil: profile.photos && profile.photos[0] ? profile.photos[0].value : null
             });
             await user.save();
+
+            // Send welcome email in background
+            sendWelcomeEmail(user.email, { nom: user.nom, prenom: user.prenom })
+                .catch(e => console.error('Social(Facebook) Welcome Email Failed:', e));
+
             return done(null, user);
         } catch (err) {
             console.error('Facebook Auth Error:', err);

@@ -74,6 +74,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/reclamations', require('./routes/reclamations'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/public', require('./routes/public'));
+app.use('/api/messages', require('./routes/messages'));
 
 const PORT = process.env.PORT || 5000;
 

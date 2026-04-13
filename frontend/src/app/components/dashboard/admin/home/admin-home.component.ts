@@ -2,85 +2,135 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../../services/admin.service';
+import { Api } from '../../../../services/api';
 
 @Component({
     selector: 'app-admin-home',
     standalone: true,
     imports: [CommonModule, RouterModule],
     template: `
-    <div class="admin-container fade-in">
-        <div class="header-section mb-4">
-            <h2 class="fw-bold text-primary">Tableau de Bord Administrateur</h2>
-            <p class="text-muted">Vue d'ensemble de l'activité commerciale et des consommateurs</p>
+    <div class="admin-pro-container fade-in">
+        <!-- Premium Regional Header -->
+        <div class="regional-header mb-5 p-5 rounded-4 shadow-sm position-relative overflow-hidden">
+            <div class="header-overlay"></div>
+            <div class="position-relative z-1 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="badge-regional mb-3 animate-slide-in">
+                        <i class="bi bi-geo-alt-fill me-2"></i> ADMINISTRATION RÉGIONALE
+                    </div>
+                    <h1 class="display-5 fw-bold text-white mb-2">Tableau de Bord de Proximité</h1>
+                    <p class="text-white opacity-75 mb-0 fs-5">Coordination des réclamations et suivi des consommateurs de votre région.</p>
+                </div>
+                <div class="header-icon d-none d-lg-block opacity-25">
+                    <i class="bi bi-person-workspace" style="font-size: 8rem; color: white;"></i>
+                </div>
+            </div>
         </div>
 
-        <!-- Stats Row -->
         <div class="row g-4 mb-5">
-            <div class="col-md-4">
-                <div class="stat-card consumers shadow-sm clickable" routerLink="/dashboard/admin/stats">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon me-3"><i class="bi bi-people-fill"></i></div>
-                        <div>
-                            <div class="stat-label">Consommateurs</div>
-                            <div class="stat-value">{{stats.consumers}}</div>
+            <!-- Stats Grid -->
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    <div class="col-md-4" *ngFor="let stat of getStatsList()">
+                        <div class="stat-card-pro p-4 rounded-4 shadow-sm bg-white border-0 h-100 transition-all clickable" 
+                             [routerLink]="stat.link">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-circle-pro p-3 rounded-3" [style.background]="stat.bgColor" [style.color]="stat.color">
+                                    <i [class]="'bi ' + stat.icon + ' fs-4'"></i>
+                                </div>
+                                <div class="ms-3">
+                                    <p class="text-muted small fw-bold text-uppercase mb-0 ls-1">{{ stat.label }}</p>
+                                    <h3 class="fw-bold mb-0">{{ stat.value }}</h3>
+                                </div>
+                            </div>
+                            <div class="progress mt-3" style="height: 5px;">
+                                <div class="progress-bar" [style.backgroundColor]="stat.color" [style.width]="'60%'"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="stat-card pending shadow-sm clickable" routerLink="/dashboard/admin/stats">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon me-3"><i class="bi bi-hourglass-split"></i></div>
-                        <div>
-                            <div class="stat-label">En Attente</div>
-                            <div class="stat-value">{{stats.pending}}</div>
+
+            <!-- Insight Panel -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100 bg-dark text-white p-4 position-relative overflow-hidden">
+                    <div class="position-relative z-1">
+                        <h4 class="fw-bold mb-3">Disponibilité Services</h4>
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="status-pulse me-2"></div>
+                            <span class="text-success fw-bold">RÉGION OPÉRATIONNELLE</span>
                         </div>
+                        <div class="user-summary bg-white-10 p-3 rounded-3 mb-4">
+                            <div class="d-flex justify-content-between small opacity-75 mb-2">
+                                <span>Réclamations Traitées</span>
+                                <span class="fw-bold">85%</span>
+                            </div>
+                            <div class="progress bg-secondary" style="height: 4px;">
+                                <div class="progress-bar bg-info" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <button routerLink="/dashboard/admin/messages" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm">
+                            <i class="bi bi-chat-dots me-2"></i> Consulter Messagerie
+                        </button>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stat-card complements shadow-sm clickable" routerLink="/dashboard/admin/stats">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon me-3"><i class="bi bi-plus-circle"></i></div>
-                        <div>
-                            <div class="stat-label">Compléments</div>
-                            <div class="stat-value">{{stats.complements}}</div>
-                        </div>
+                    <!-- Decorative back icon -->
+                    <div class="position-absolute bottom-0 end-0 opacity-10">
+                        <i class="bi bi-activity" style="font-size: 10rem; transform: translate(25%, 25%);"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Consumers List Section -->
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <!-- Recent Consumers Table -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
             <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0">Liste des Consommateurs (Base de données)</h5>
-                <a routerLink="/dashboard/admin/consumers" class="btn btn-primary btn-sm rounded-pill px-3">Voir tout</a>
+                <div>
+                    <h4 class="fw-bold mb-0 text-dark">Répertoire des Consommateurs</h4>
+                    <p class="text-muted small mb-0">Données régionales récemment synchronisées</p>
+                </div>
+                <a routerLink="/dashboard/admin/consumers" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold">Voir l'annuaire complet</a>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 custom-table">
                     <thead class="bg-light">
                         <tr>
                             <th class="ps-4">Consommateur</th>
-                            <th>Email</th>
-                            <th>Téléphone</th>
-                            <th class="pe-4">Localisation</th>
+                            <th>Coordonnées</th>
+                            <th>Localisation</th>
+                            <th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let user of consumers">
+                        <tr *ngFor="let user of consumers" class="user-row">
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-small me-3">{{user.prenom[0]}}{{user.nom[0]}}</div>
-                                    <span class="fw-medium">{{user.prenom}} {{user.nom}}</span>
+                                    <div class="avatar-circle-pro me-3 fw-bold">{{user.prenom[0]}}{{user.nom[0]}}</div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">{{user.prenom}} {{user.nom}}</h6>
+                                        <small class="text-muted opacity-75">Client Régional</small>
+                                    </div>
                                 </div>
                             </td>
-                            <td>{{user.email}}</td>
-                            <td>{{user.telephone}}</td>
-                            <td class="pe-4">{{user.adresse?.region}} / {{user.adresse?.ville}}</td>
+                            <td>
+                                <div><i class="bi bi-envelope small me-2 text-muted"></i>{{user.email}}</div>
+                                <div class="small text-muted"><i class="bi bi-telephone small me-2"></i>{{user.telephone}}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border-light-subtle fw-medium px-3 py-2 rounded-pill">
+                                    {{user.adresse?.region}} / {{user.adresse?.ville}}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-light-pro btn-sm rounded-circle" [routerLink]="['/dashboard/admin/consumers']">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
                         </tr>
                         <tr *ngIf="consumers.length === 0">
-                            <td colspan="4" class="text-center py-5 text-muted">Chargement des consommateurs...</td>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                Synchronisation des données régionales...
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -89,21 +139,96 @@ import { AdminService } from '../../../../services/admin.service';
     </div>
     `,
     styles: [`
-        .admin-container { padding: 30px; background: #f8fafc; min-height: 100vh; }
-        .stat-card { background: white; padding: 25px; border-radius: 15px; transition: transform 0.2s; border-left: 5px solid transparent; }
-        .stat-card:hover { transform: translateY(-3px); }
-        .stat-card.consumers { border-left-color: #3b82f6; }
-        .stat-card.pending { border-left-color: #f59e0b; }
-        .stat-card.complements { border-left-color: #8b5cf6; }
-        .stat-icon { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.5rem; background: #f1f5f9; color: #64748b; }
-        .stat-label { color: #64748b; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; }
-        .stat-value { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
-        .avatar-small { width: 35px; height: 35px; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; font-weight: bold; }
+        .admin-pro-container { padding: 30px; background: #f8fafc; min-height: 100vh; }
+        
+        /* Premium Header */
+        .regional-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 70%, #60a5fa 100%);
+            min-height: 240px;
+        }
+        .header-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent);
+            z-index: 0;
+        }
+        .badge-regional {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Stat Cards */
+        .stat-card-pro { 
+            border: 1px solid #f1f5f9;
+        }
+        .stat-card-pro:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05) !important;
+            border-color: #3b82f633;
+        }
+        .icon-circle-pro {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ls-1 { letter-spacing: 1px; }
+
+        /* Custom Table */
+        .custom-table thead th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            border-bottom: 0;
+            padding: 1.25rem 1rem;
+        }
+        .user-row { transition: all 0.2s; }
+        .user-row:hover { background-color: #f8fafc; }
+        .avatar-circle-pro {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: #e0e7ff; color: #4338ca; font-size: 0.85rem;
+        }
+
+        .btn-light-pro { 
+            background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-light-pro:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        .bg-white-10 { background: rgba(255, 255, 255, 0.1); }
+
+        /* Status & Animation */
+        .status-pulse {
+            width: 10px; height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .fade-in { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-in { animation: slideIn 0.5s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        
         .clickable { cursor: pointer; }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .transition-all { transition: all 0.3s ease; }
     `]
 })
 export class AdminHomeComponent implements OnInit {
@@ -116,25 +241,36 @@ export class AdminHomeComponent implements OnInit {
 
     constructor(
         private adminService: AdminService,
+        private api: Api,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
+        this.loadCaches();
+        this.loadData();
+    }
+
+    loadCaches() {
         const cached = localStorage.getItem('otic_admin_home_stats');
         if (cached) {
             try { this.stats = JSON.parse(cached); } catch (e) { }
         }
-        this.loadData();
+    }
+
+    getStatsList() {
+        return [
+            { label: 'Consommateurs', value: this.stats.consumers, icon: 'bi-people-fill', bgColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', link: '/dashboard/admin/consumers' },
+            { label: 'En Attente', value: this.stats.pending, icon: 'bi-hourglass-split', bgColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', link: '/dashboard/admin/assign' },
+            { label: 'Compléments', value: this.stats.complements, icon: 'bi-plus-circle', bgColor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', link: '/dashboard/admin/assign' }
+        ];
     }
 
     loadData() {
-        console.log('📡 AdminHome: Loading data...');
         this.adminService.getConsumers().subscribe({
             next: (data) => {
-                console.log('✅ AdminHome: Consumers loaded:', data.length);
-                this.consumers = data.slice(0, 10);
+                this.consumers = data.slice(0, 8);
                 this.stats.consumers = data.length;
-                localStorage.setItem('otic_admin_home_stats', JSON.stringify(this.stats));
+                this.saveStats();
                 this.cdr.detectChanges();
             },
             error: (err) => {
@@ -146,9 +282,8 @@ export class AdminHomeComponent implements OnInit {
 
         this.adminService.getPendingReclamations().subscribe({
             next: (data) => {
-                console.log('✅ AdminHome: Pending loaded:', data.length);
                 this.stats.pending = data.length;
-                localStorage.setItem('otic_admin_home_stats', JSON.stringify(this.stats));
+                this.saveStats();
                 this.cdr.detectChanges();
             },
             error: (err) => console.error('❌ AdminHome: Pending fetch error:', err)
@@ -156,24 +291,18 @@ export class AdminHomeComponent implements OnInit {
 
         this.adminService.getComplementReclamations().subscribe({
             next: (data) => {
-                console.log('✅ AdminHome: Complements loaded:', data.length);
                 this.stats.complements = data.length;
-                localStorage.setItem('otic_admin_home_stats', JSON.stringify(this.stats));
+                this.saveStats();
                 this.cdr.detectChanges();
             },
             error: (err) => console.error('❌ AdminHome: Complements fetch error:', err)
         });
+
+        // Pre-fetch Water Brands for instant display in that component
+        this.api.getWaterBrands().subscribe();
     }
 
-    markRead(reclamation: any) {
-        if (!reclamation.lu && reclamation._id) {
-            this.adminService.markAsRead(reclamation._id).subscribe({
-                next: () => {
-                    reclamation.lu = true;
-                    this.cdr.detectChanges();
-                },
-                error: (err) => console.error('Error marking as read:', err)
-            });
-        }
+    saveStats() {
+        localStorage.setItem('otic_admin_home_stats', JSON.stringify(this.stats));
     }
 }

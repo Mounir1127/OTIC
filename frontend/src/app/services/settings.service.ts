@@ -70,7 +70,6 @@ export class SettingsService {
                 add_admin: 'Ajouter Admin',
                 security: 'Sécurité',
                 assign_reclamations: 'Affecter Réclamation',
-                complement_requests: 'Demandes Complément',
                 manage_consumers: 'Consommateurs',
                 my_reclamations: 'Mes Réclamations',
                 all_reclamations: 'Toutes les Réclamations',
@@ -83,7 +82,10 @@ export class SettingsService {
                 status_fermee: 'Fermée',
                 status_rejete: 'Rejetée',
                 status_complement: 'Complément requis',
-                mineral_waters: 'Eaux Minérales'
+                mineral_waters: 'Eaux Minérales',
+                manage_conventionnes: 'Conventionnés',
+                add_conventionne: 'Ajouter Conventionné',
+                Messagerie: 'Messagerie'
             },
             en: {
                 dashboard: 'Dashboard',
@@ -91,7 +93,10 @@ export class SettingsService {
                 status_fermee: 'Closed',
                 status_rejete: 'Rejected',
                 status_complement: 'Complement Required',
-                mineral_waters: 'Mineral Waters'
+                mineral_waters: 'Mineral Waters',
+                manage_conventionnes: 'Partners / Conventionnés',
+                add_conventionne: 'Add Partner',
+                Messagerie: 'Internal Chat'
             },
             ar: {
                 dashboard: 'لوحة القيادة',
@@ -99,7 +104,10 @@ export class SettingsService {
                 status_fermee: 'مغلقة',
                 status_rejete: 'مرفوضة',
                 status_complement: 'تكملة الملف',
-                mineral_waters: 'المياه المعدنية'
+                mineral_waters: 'المياه المعدنية',
+                manage_conventionnes: 'الشركاء المتعاقدون',
+                add_conventionne: 'إضافة شريك جديد',
+                Messagerie: 'المراسلات'
             }
         };
         return translations[lang]?.[key] || key;

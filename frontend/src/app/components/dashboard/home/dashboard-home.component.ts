@@ -10,6 +10,18 @@ import { AuthService } from '../../../services/auth.service';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="fade-in">
+      <!-- Welcome Toast Overlay -->
+      <div *ngIf="showWelcomeToast" class="welcome-toast-overlay">
+        <div class="welcome-toast p-4 rounded-4 shadow-lg animate-slide-up">
+            <div class="d-flex align-items-center mb-2">
+                <div class="icon-circle me-3"><i class="bi bi-envelope-check-fill"></i></div>
+                <h5 class="fw-bold mb-0">Bienvenue chez OTIC !</h5>
+                <button (click)="closeToast()" class="btn-close ms-auto"></button>
+            </div>
+            <p class="mb-0 text-muted small">Votre compte est prêt. Un email de bienvenue vous a été envoyé à votre adresse.</p>
+        </div>
+      </div>
+
       <div class="mb-5">
         <h2 class="fw-bold text-primary mb-1">Tableau de Bord</h2>
         <p class="text-muted">Bienvenue dans votre espace de suivi.</p>
@@ -17,7 +29,6 @@ import { AuthService } from '../../../services/auth.service';
 
       <!-- Summary Cards -->
       <div class="row g-4 mb-5">
-        <!-- Total Card -->
         <div class="col-md-4">
           <div class="card border-0 shadow-sm h-100 overflow-hidden card-hover">
             <div class="card-body p-4 position-relative">
@@ -38,7 +49,6 @@ import { AuthService } from '../../../services/auth.service';
           </div>
         </div>
 
-        <!-- In Progress Card -->
         <div class="col-md-4">
           <div class="card border-0 shadow-sm h-100 overflow-hidden card-hover">
             <div class="card-body p-4 position-relative">
@@ -59,7 +69,6 @@ import { AuthService } from '../../../services/auth.service';
           </div>
         </div>
 
-        <!-- Resolved Card -->
         <div class="col-md-4">
           <div class="card border-0 shadow-sm h-100 overflow-hidden card-hover">
             <div class="card-body p-4 position-relative">
@@ -81,11 +90,10 @@ import { AuthService } from '../../../services/auth.service';
         </div>
       </div>
 
-      <!-- Quick Actions & Recent -->
       <div class="row g-4">
          <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header premium-header border-0 py-4 px-4 d-flex justify-content-between align-items-center">
+            <div class="card border-0 shadow-sm rounded-4 h-100 text-dark">
+                <div class="card-header bg-white border-0 py-4 px-4 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">Activité Récente</h5>
                     <a routerLink="/dashboard/reclamation" class="btn btn-light btn-sm rounded-pill px-3">Tout voir</a>
                 </div>
@@ -119,7 +127,7 @@ import { AuthService } from '../../../services/auth.service';
             <div class="card bg-primary text-white border-0 shadow-lg rounded-4 overflow-hidden mb-4 position-relative">
                 <div class="card-body p-4 position-relative z-1 text-center">
                     <div class="mb-4">
-                        <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex p-3 mb-3 backdrop-blur">
+                        <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex p-3 mb-3">
                             <i class="bi bi-megaphone-fill fs-2"></i>
                         </div>
                         <h4 class="fw-bold">Un problème ?</h4>
@@ -127,7 +135,6 @@ import { AuthService } from '../../../services/auth.service';
                     </div>
                     <a routerLink="/dashboard/reclamation/new" class="btn btn-white text-primary w-100 py-3 rounded-pill fw-bold shadow-sm">Nouvelle Réclamation</a>
                 </div>
-                 <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-primary opacity-50"></div>
                  <div class="position-absolute top-0 end-0 p-3 opacity-25">
                     <i class="bi bi-lightning-charge-fill" style="font-size: 10rem; transform: rotate(15deg) translate(20px, -20px);"></i>
                  </div>
@@ -139,8 +146,33 @@ import { AuthService } from '../../../services/auth.service';
   styles: [`
     .ls-1 { letter-spacing: 1px; }
     .fade-in { animation: fadeIn 0.5s ease-out; }
-    .backdrop-blur { backdrop-filter: blur(4px); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Welcome Toast Overlay */
+    .welcome-toast-overlay {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 9999;
+    }
+    .welcome-toast {
+        background: #ffffff;
+        border-left: 5px solid #10b981;
+        min-width: 350px;
+        border-right: 1px solid #f1f5f9;
+        border-top: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .icon-circle {
+        width: 40px; height: 40px;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%;
+        font-size: 1.2rem;
+    }
+    .animate-slide-up { animation: slideUp 0.5s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
 export class DashboardHomeComponent implements OnInit {
@@ -150,6 +182,7 @@ export class DashboardHomeComponent implements OnInit {
     resolved: 0
   };
   recentReclamations: any[] = [];
+  showWelcomeToast = false;
 
   constructor(
     private reclamationService: ReclamationService,
@@ -158,6 +191,8 @@ export class DashboardHomeComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.checkWelcomeFlag();
+
     const cached = localStorage.getItem('otic_dash_home_stats');
     if (cached) {
       try { this.stats = JSON.parse(cached); } catch (e) { }
@@ -185,6 +220,19 @@ export class DashboardHomeComponent implements OnInit {
     });
   }
 
+  checkWelcomeFlag() {
+    if (localStorage.getItem('otic_show_welcome') === 'true') {
+        this.showWelcomeToast = true;
+        localStorage.removeItem('otic_show_welcome');
+        // Auto close after 8 seconds
+        setTimeout(() => this.closeToast(), 8000);
+    }
+  }
+
+  closeToast() {
+    this.showWelcomeToast = false;
+  }
+
   getStatusBadge(status: string): string {
     switch (status) {
       case 'En Attente': return 'bg-warning-subtle text-warning';
@@ -196,7 +244,6 @@ export class DashboardHomeComponent implements OnInit {
   }
 
   getHostIcon(sector: string): string {
-    // Simple mapping based on known sectors or generic fallback
     if (sector?.toLowerCase().includes('comm')) return 'bi-shop text-primary';
     if (sector?.toLowerCase().includes('bank')) return 'bi-bank text-success';
     if (sector?.toLowerCase().includes('sant')) return 'bi-hospital text-danger';

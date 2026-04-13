@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { SettingsService, UserSettings } from '../../../services/settings.service';
 import { NotificationService } from '../../../services/notification.service';
+import { MessageService } from '../../../services/message.service';
 import { Subscription, interval } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 
@@ -35,6 +36,10 @@ import { startWith, switchMap } from 'rxjs/operators';
             <span *ngIf="item.labelKey === 'my_reclamations' && unreadNotifications > 0" 
                   class="badge bg-danger rounded-pill ms-2 pulse-badge">
               {{ unreadNotifications }}
+            </span>
+            <span *ngIf="item.labelKey === 'Messagerie' && unreadMessages > 0" 
+                  class="badge bg-danger rounded-pill ms-2 pulse-badge">
+              {{ unreadMessages }}
             </span>
           </a>
         </li>
@@ -117,6 +122,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   currentSettings: UserSettings = { darkMode: false, language: 'fr' };
   menuItems: any[] = [];
   unreadNotifications: number = 0;
+  unreadMessages: number = 0;
   private subscription: Subscription = new Subscription();
 
   constructor(
@@ -124,6 +130,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private settingsService: SettingsService,
     private notificationService: NotificationService,
+    private messageService: MessageService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -141,6 +148,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
       if (user && user.role === 'consommateur_simple') {
         this.startNotificationPolling();
+      }
+      if (user && (user.role === 'admin_regional' || user.role === 'super_admin')) {
+        this.startMessagePolling();
       }
 
       this.cdr.detectChanges();
@@ -167,6 +177,22 @@ export class SidebarComponent implements OnInit, OnDestroy {
     );
   }
 
+  startMessagePolling(): void {
+    // Poll every 10 seconds for new messages
+    this.subscription.add(
+      interval(10000).pipe(
+        startWith(0),
+        switchMap(() => this.messageService.getUnreadCount())
+      ).subscribe({
+        next: (res) => {
+          this.unreadMessages = res.count;
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Message polling error:', err)
+      })
+    );
+  }
+
   generateMenu(): void {
     if (!this.user) {
       this.menuItems = [];
@@ -178,9 +204,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
         { path: '/dashboard/admin-management', icon: 'bi-speedometer2', labelKey: 'admin_panel', exact: true },
         { path: '/dashboard/admin-management/users', icon: 'bi-people-fill', labelKey: 'manage_users', exact: false },
-        { path: '/dashboard/admin-management/add', icon: 'bi-person-plus-fill', labelKey: 'add_admin', exact: true },
-        { path: '/dashboard/admin-management/security', icon: 'bi-shield-lock-fill', labelKey: 'security', exact: true },
         { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/admin/conventionnes', icon: 'bi-briefcase', labelKey: 'manage_conventionnes', exact: false },
+        { path: '/dashboard/admin/messages', icon: 'bi-chat-dots-fill', labelKey: 'Messagerie', exact: false },
         { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ],
@@ -193,10 +219,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
       admin_regional: [
         { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
         { path: '/dashboard/admin/assign', icon: 'bi-share-fill', labelKey: 'assign_reclamations', exact: false },
-        { path: '/dashboard/admin/complements', icon: 'bi-plus-circle-fill', labelKey: 'complement_requests', exact: false },
         { path: '/dashboard/admin/all-reclamations', icon: 'bi-list-ul', labelKey: 'all_reclamations', exact: false },
         { path: '/dashboard/admin/consumers', icon: 'bi-people', labelKey: 'manage_consumers', exact: false },
         { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/admin/conventionnes', icon: 'bi-briefcase', labelKey: 'manage_conventionnes', exact: false },
+        { path: '/dashboard/admin/messages', icon: 'bi-chat-dots-fill', labelKey: 'Messagerie', exact: false },
         { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ]

@@ -28,6 +28,7 @@ export class RegisterComponent {
         }
     };
     error = '';
+    isSubmitting = false;
     governorates: any[] = TUNISIA_DATA;
     delegations: any[] = [];
 
@@ -36,21 +37,14 @@ export class RegisterComponent {
         private locationService: LocationService,
         private router: Router
     ) {
-        // Optimistically set default data first
         this.governorates = TUNISIA_DATA;
-
-        // Attempt to fetch fresh data, but don't clear existing if it fails
         this.locationService.getGovernorates().subscribe({
             next: (data) => {
                 if (data && data.length > 0) {
-                    console.log('Governorates loaded from server:', data);
                     this.governorates = data;
                 }
             },
-            error: (err) => {
-                console.warn('Backend unavailable, using local Tunisia data:', err);
-                // No action needed, defaults are already set
-            }
+            error: (err) => console.warn('Backend unavailable, using local data')
         });
     }
 
@@ -69,19 +63,27 @@ export class RegisterComponent {
     }
 
     register() {
+        if (this.isSubmitting) return;
+        this.isSubmitting = true;
+        this.error = '';
+        
         this.authService.register(this.user).subscribe({
             next: (res) => {
+                // Success: Store token and a flag for the welcome message
                 localStorage.setItem('token', res.token);
+                localStorage.setItem('otic_show_welcome', 'true');
+                
+                // Direct navigation to dashboard as requested
                 this.router.navigate(['/dashboard']);
             },
             error: (err) => {
-                this.error = err.error.msg || 'Registration failed';
+                this.error = err.error.msg || 'Une erreur est survenue lors de l\'inscription';
+                this.isSubmitting = false;
             }
         });
     }
 
     socialLogin(platform: string) {
-        console.log(`Redirecting to ${platform} register...`);
         window.location.href = `http://localhost:5000/api/auth/${platform}`;
     }
 }

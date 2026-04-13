@@ -42,6 +42,18 @@ export class AuthService {
         );
     }
 
+    updateProfile(userData: any): Observable<any> {
+        const token = localStorage.getItem('token');
+        return this.http.put(`${this.apiUrl}/update-profile`, userData, {
+            headers: { 'x-auth-token': token || '' }
+        }).pipe(
+            tap(user => {
+                const current = this.currentUserSubject.value;
+                this.currentUserSubject.next({ ...current, ...user });
+            })
+        );
+    }
+
     logout() {
         localStorage.removeItem('token');
         this.currentUserSubject.next(null);
@@ -52,5 +64,13 @@ export class AuthService {
         return this.http.post(`${this.apiUrl}/change-password`, passwords, {
             headers: { 'x-auth-token': token || '' }
         });
+    }
+
+    forgotPassword(email: string): Observable<any> {
+        return this.http.post(`${this.apiUrl}/forgot-password`, { email });
+    }
+
+    resetPassword(data: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/reset-password`, data);
     }
 }

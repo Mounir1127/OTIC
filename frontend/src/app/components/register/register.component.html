@@ -87,7 +87,10 @@
                     {{ error }}
                 </div>
 
-                <button type="submit" class="btn-submit mb-4">S'inscrire</button>
+                <button type="submit" class="btn-submit mb-4" [disabled]="isSubmitting">
+                    <span *ngIf="!isSubmitting">S'inscrire</span>
+                    <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+                </button>
                 
                 <div class="position-relative mb-4">
                     <hr class="text-muted opacity-25">
@@ -119,6 +122,3 @@
         </div>
     </div>
 </div>
-
-
-

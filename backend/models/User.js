@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
     },
     prenom: {
         type: String,
-        required: true,
+        required: false,
     },
     email: {
         type: String,
@@ -16,11 +16,11 @@ const UserSchema = new mongoose.Schema({
     },
     telephone: {
         type: String,
-        required: true,
+        required: false,
     },
     cin: {
         type: String,
-        required: true,
+        required: false,
         unique: true,
         sparse: true,
     },
@@ -51,6 +51,14 @@ const UserSchema = new mongoose.Schema({
         region: { type: String, required: false },
         codePostal: { type: String, required: false },
     },
+    resetPasswordCode: {
+        type: String,
+        default: null
+    },
+    resetPasswordExpires: {
+        type: Date,
+        default: null
+    }
 });
 
 module.exports = mongoose.model("user", UserSchema);

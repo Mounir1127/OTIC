@@ -34,6 +34,14 @@
       </div>
       <i class="bi bi-chevron-right ms-auto opacity-50"></i>
     </div>
+    <div class="stat-card clickable" routerLink="/dashboard/mineral-waters">
+      <div class="stat-icon water-stat" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="bi bi-droplet-fill"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Eaux Minérales</span>
+        <span class="stat-value">{{stats.totalWaterBrands}}</span>
+      </div>
+      <i class="bi bi-chevron-right ms-auto opacity-50"></i>
+    </div>
   </div>
 
   <div class="quick-actions-grid">
@@ -42,15 +50,15 @@
       <h4>Ajouter un Admin Régional</h4>
       <p>Créez de nouveaux profils administratifs régionaux</p>
     </div>
-    <div class="action-card" routerLink="/dashboard/admin-management/security">
-      <div class="action-icon security"><i class="bi bi-key"></i></div>
-      <h4>Sécurité</h4>
-      <p>Modifiez votre mot de passe et accès</p>
-    </div>
     <div class="action-card" routerLink="/dashboard/admin-management/users" [queryParams]="{filter: 'all'}">
       <div class="action-icon logs"><i class="bi bi-list-check"></i></div>
       <h4>Utilisateurs</h4>
       <p>Gérez la liste complète des membres</p>
+    </div>
+    <div class="action-card" routerLink="/dashboard/mineral-waters">
+      <div class="action-icon water"><i class="bi bi-droplet-fill"></i></div>
+      <h4>Eaux Minérales</h4>
+      <p>Consultez la liste des eaux et leurs analyses</p>
     </div>
   </div>
 </div>

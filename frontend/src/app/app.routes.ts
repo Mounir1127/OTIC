@@ -16,17 +16,21 @@ import { UsersListComponent } from './components/dashboard/admin-management/user
 import { EditUserComponent } from './components/dashboard/admin-management/edit-user/edit-user.component';
 import { AdminHomeComponent } from './components/dashboard/admin/home/admin-home.component';
 import { AssignReclamationComponent } from './components/dashboard/admin/assign-reclamation/assign-reclamation.component';
-import { ComplementRequestsComponent } from './components/dashboard/admin/complement-requests/complement-requests.component';
 import { ConsumersListComponent } from './components/dashboard/admin/consumers-list/consumers-list.component';
 import { AllReclamationsComponent } from './components/dashboard/admin/all-reclamations/all-reclamations.component';
 import { StatsComponent } from './components/dashboard/admin/stats/stats.component';
 import { MineralWatersComponent } from './components/dashboard/mineral-waters/mineral-waters.component';
+import { ConventionnesListComponent } from './components/dashboard/admin/conventionnes-list/conventionnes-list.component';
+import { MessagesComponent } from './components/dashboard/admin/messages/messages.component';
+import { ForgotPasswordComponent } from './components/auth/forgot-password/forgot-password.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
     { path: 'eaux-minerales', component: MineralWatersComponent },
     { path: 'login', component: LoginComponent },
     { path: 'register', component: RegisterComponent },
+    { path: 'forgot-password', component: ForgotPasswordComponent },
+    { path: 'reset-password', component: ForgotPasswordComponent },
     {
         path: 'dashboard',
         component: DashboardComponent,
@@ -43,10 +47,11 @@ export const routes: Routes = [
             { path: 'admin-management/users/edit/:id', component: EditUserComponent },
             { path: 'admin-home', component: AdminHomeComponent },
             { path: 'admin/assign', component: AssignReclamationComponent },
-            { path: 'admin/complements', component: ComplementRequestsComponent },
             { path: 'admin/all-reclamations', component: AllReclamationsComponent },
             { path: 'admin/consumers', component: ConsumersListComponent },
             { path: 'admin/stats', component: StatsComponent },
+            { path: 'admin/conventionnes', component: ConventionnesListComponent },
+            { path: 'admin/messages', component: MessagesComponent },
             { path: 'mineral-waters', component: MineralWatersComponent }
         ]
     },

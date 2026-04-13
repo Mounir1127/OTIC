@@ -50,7 +50,7 @@ const ReclamationSchema = new mongoose.Schema({
     },
     conventionne: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
+        ref: 'conventionne',
         default: null
     },
     history: [{

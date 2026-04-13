@@ -51,6 +51,20 @@ export class AdminService {
     createAdmin(adminData: any): Observable<any> {
         return this.http.post(`${this.apiUrl}/create-admin`, adminData, { headers: this.getHeaders() });
     }
+    
+    createConventionne(userData: any): Observable<any> {
+        // Now include region for the new field
+        const payload = { 
+            nom: userData.nom, 
+            email: userData.email,
+            region: userData.region 
+        };
+        return this.http.post(`${this.apiUrl}/create-conventionne`, payload, { headers: this.getHeaders() });
+    }
+
+    deletePartner(id: string): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/conventionne/${id}`, { headers: this.getHeaders() });
+    }
 
     deleteUser(id: string): Observable<any> {
         return this.http.delete(`${this.apiUrl}/user/${id}`, { headers: this.getHeaders() });

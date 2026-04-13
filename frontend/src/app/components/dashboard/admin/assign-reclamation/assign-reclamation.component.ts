@@ -178,27 +178,29 @@ import { AdminService } from '../../../../services/admin.service';
                         </div>
                     </ng-container>
 
-                    <!-- Section AFFECTATION - SPECIAL FOR THIS VIEW -->
-                    <div class="mshell-section-title"><i class="bi bi-person-plus-fill me-2"></i>Affectation au Partenaire Conventionné</div>
-                    <div class="card premium-card p-4 mb-2 assignment-special-card">
+                    <!-- Section AFFECTATION - MATCHING SCREENSHOT -->
+                    <div class="mshell-section-title text-uppercase letter-spacing-2">
+                        <i class="bi bi-person-plus-fill me-2"></i>AFFECTATION AU PARTENAIRE CONVENTIONNÉ
+                    </div>
+                    <div class="assignment-card-img-style">
                         <div class="row g-3 align-items-center">
                             <div class="col-md-8">
-                                <label class="mshell-header-eyebrow text-dark mb-2 d-block">Choisir un conventionné</label>
-                                <select class="form-select status-select-pro" [(ngModel)]="selectedConventionne">
+                                <label class="mshell-header-eyebrow text-dark mb-2 d-block fw-bold">CHOISIR UN CONVENTIONNÉ</label>
+                                <select class="form-select assignment-select-custom" [(ngModel)]="selectedConventionne">
                                     <option value="">-- Sélectionner un partenaire --</option>
                                     <option *ngFor="let conv of conventionnes" [value]="conv._id">
-                                        {{conv.prenom}} {{conv.nom}} ({{conv.email}})
+                                        {{conv.nom}} ({{conv.email}})
                                     </option>
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <button class="mfooter-btn confirm-pro w-100" 
+                                <button class="btn-affecter-now w-100" 
                                         [disabled]="!selectedConventionne || assigning"
                                         (click)="assignRec()">
-                                    <i class="bi bi-send-check-fill me-2" *ngIf="!assigning"></i>
+                                    <i class="bi bi-send-fill me-2" *ngIf="!assigning"></i>
                                     <span *ngIf="!assigning">AFFECTER MAINTENANT</span>
                                     <span *ngIf="assigning" class="spinner-border spinner-border-sm me-2"></span>
-                                    <span *ngIf="assigning">TRAITEMENT...</span>
+                                    <span *ngIf="assigning">EN COURS...</span>
                                 </button>
                             </div>
                         </div>
@@ -286,11 +288,52 @@ import { AdminService } from '../../../../services/admin.service';
 
         .motif-chip { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; }
         .motif-chip.autre { background: #ede9fe; border-color: #c4b5fd; color: #7c3aed; border-style: dashed; }
+        .letter-spacing-2 { letter-spacing: 2px !important; }
 
-        .assignment-special-card { background: #eff6ff !important; border: 2px solid #bfdbfe !important; border-radius: 20px !important; }
-        .status-select-pro { padding: 12px 16px; border-radius: 14px; border: 1.5px solid #d1d5db; font-weight: 600; font-size: 0.9rem; }
-        .confirm-pro { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 12px; border-radius: 14px; font-weight: 800; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: all 0.3s; }
-        .confirm-pro:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4); }
+        .assignment-card-img-style { 
+            background: #f0f7ff; 
+            border: 2px solid #bfdbfe; 
+            border-radius: 20px; 
+            padding: 24px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            margin-bottom: 24px;
+        }
+        .assignment-select-custom {
+            height: 60px;
+            border-radius: 15px;
+            border: 2.5px solid #bfdbfe;
+            font-weight: 600;
+            color: #1e3a8a;
+            padding-left: 20px;
+        }
+        .assignment-select-custom:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.1);
+        }
+        .btn-affecter-now {
+            height: 60px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 15px;
+            border: none;
+            font-weight: 800;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25);
+            transition: all 0.3s;
+        }
+        .btn-affecter-now:hover:not(:disabled) {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.35);
+        }
+        .btn-affecter-now:disabled {
+            background: #94a3b8;
+            box-shadow: none;
+            opacity: 0.7;
+        }
 
         .mshell-footer { padding: 18px 32px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
         .mfooter-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
@@ -333,7 +376,7 @@ export class AssignReclamationComponent implements OnInit {
     ngOnInit() {
         // Load from cache for "direct" feel
         const cachedRecs = localStorage.getItem('otic_admin_pending_recs');
-        const cachedConvs = localStorage.getItem('otic_admin_conventionnes');
+        const cachedConvs = localStorage.getItem('otic_admin_conventionnes_list');
         
         if (cachedRecs) {
             try { this.reclamations = JSON.parse(cachedRecs); } catch (e) { }
@@ -360,7 +403,7 @@ export class AssignReclamationComponent implements OnInit {
         this.adminService.getConventionnes().subscribe({
             next: (data) => {
                 this.conventionnes = data;
-                localStorage.setItem('otic_admin_conventionnes', JSON.stringify(data));
+                localStorage.setItem('otic_admin_conventionnes_list', JSON.stringify(data));
             },
             error: (err) => console.error('Error fetching conventionnes:', err)
         });
