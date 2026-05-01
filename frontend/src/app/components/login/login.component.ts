@@ -37,17 +37,31 @@ export class LoginComponent {
                         this.router.navigate(['/dashboard']);
                     }
                 },
-                error: () => this.router.navigate(['/dashboard'])
+                error: (err) => {
+                    console.error('Profile fetch failed after social login:', err);
+                    this.router.navigate(['/dashboard']);
+                }
             });
         }
     });
   }
 
   login() {
+    if (!this.credentials.identifier || !this.credentials.password) {
+        this.error = 'Veuillez remplir tous les champs';
+        return;
+    }
+
+    this.error = '';
     this.credentials.identifier = this.credentials.identifier.trim();
-    this.credentials.password = this.credentials.password.trim();
+    // No trimming for password to allow spaces if intended
+    const passwordToSend = this.credentials.password;
+
+    console.log('📡 Attempting login for:', this.credentials.identifier);
+
     this.authService.login(this.credentials).subscribe({
       next: (res) => {
+        console.log('✅ Login successful, user role:', res.user?.role);
         localStorage.setItem('token', res.token);
 
         // Redirect based on role
@@ -60,7 +74,8 @@ export class LoginComponent {
         }
       },
       error: (err) => {
-        this.error = err.error?.msg || 'Échec de la connexion';
+        console.error('❌ Login error details:', err);
+        this.error = err.error?.msg || 'Échec de la connexion. Vérifiez votre connexion internet ou le serveur.';
       }
     });
   }

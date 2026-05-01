@@ -8,6 +8,7 @@ import { Observable, of, tap } from 'rxjs';
 export class Api {
   private apiUrl = 'http://localhost:5000';
   private waterBrandsCache: any[] | null = null;
+  private thermalBathsCache: any[] | null = null;
 
   constructor(private http: HttpClient) { }
 
@@ -25,6 +26,15 @@ export class Api {
     }
     return this.http.get<any[]>(`${this.apiUrl}/api/public/water-brands`).pipe(
       tap(brands => this.waterBrandsCache = brands)
+    );
+  }
+
+  getThermalBaths(forceRefresh = false): Observable<any[]> {
+    if (this.thermalBathsCache && !forceRefresh) {
+      return of(this.thermalBathsCache);
+    }
+    return this.http.get<any[]>(`${this.apiUrl}/api/public/thermal-baths`).pipe(
+      tap(baths => this.thermalBathsCache = baths)
     );
   }
 }

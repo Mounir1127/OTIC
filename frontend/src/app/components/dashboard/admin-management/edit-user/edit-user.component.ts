@@ -57,6 +57,13 @@ export class EditUserComponent implements OnInit {
         this.adminService.getUserById(this.userId).subscribe({
             next: (user) => {
                 this.editForm.patchValue(user);
+                
+                // If the user is a super_admin, they are "protected" and cannot be changed here
+                if (user.role === 'super_admin') {
+                    this.editForm.disable();
+                    this.errorMsg = 'Ce compte Super Administrateur est protégé et ne peut pas être modifié depuis cet écran.';
+                }
+
                 // Load delegations based on region if exists
                 if (user.adresse?.region) {
                     this.onRegionChange(user.adresse.region);

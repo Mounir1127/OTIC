@@ -1,7 +1,7 @@
-import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ReclamationService } from '../../../services/reclamation.service';
 import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamation-taxonomy';
@@ -375,8 +375,33 @@ export class AddReclamationComponent {
     constructor(
         private reclamationService: ReclamationService,
         private ngZone: NgZone,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private route: ActivatedRoute
     ) { }
+
+    ngOnInit() {
+        this.route.queryParams.subscribe(params => {
+            if (params['tre']) {
+                this.reclamation.secteur = "Tunisiens à l'Étranger";
+                this.onSectorChange();
+                if (params['cat']) {
+                    const decodedCat = decodeURIComponent(params['cat']);
+                    // Map the simple ID to the actual subsector name
+                    const mapping: any = {
+                        'transfers': 'Transferts d’argent',
+                        'luggage': 'Bagages',
+                        'tourism': 'Services touristiques (TRE)',
+                        'fraud': 'Fraude commerciale (International)',
+                        'admin': 'Questions administratives et consulaires'
+                    };
+                    if (mapping[decodedCat]) {
+                        this.reclamation.sous_secteur = mapping[decodedCat];
+                        this.step = 3; // Jump to details
+                    }
+                }
+            }
+        });
+    }
 
     onSectorChange() {
         const selected = this.sectors.find(s => s.name === this.reclamation.secteur);
@@ -440,6 +465,11 @@ export class AddReclamationComponent {
             formData.append('sous_secteur', this.reclamation.sous_secteur);
             formData.append('description', this.reclamation.description);
             formData.append('operateur', this.reclamation.operateur);
+
+            if (this.reclamation.secteur === "Tunisiens à l'Étranger") {
+                formData.append('isTRE', 'true');
+                formData.append('treCategory', this.reclamation.sous_secteur);
+            }
 
             if (this.reclamation.natures && this.reclamation.natures.length > 0) {
                 this.reclamation.natures.forEach(n => formData.append('natures[]', n));

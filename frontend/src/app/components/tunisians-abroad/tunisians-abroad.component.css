@@ -1,0 +1,156 @@
+/* Tunisians Abroad Styling */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+.tre-wrapper {
+    font-family: 'Outfit', sans-serif;
+    overflow-x: hidden;
+}
+
+.tre-wrapper.rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Navbar */
+.tre-navbar {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 0;
+}
+
+.btn-lang {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-lang:hover {
+    background: white;
+    color: #0f172a;
+    transform: translateY(-2px);
+}
+
+/* Hero Section */
+.tre-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    padding: 8rem 0 0rem;
+    position: relative;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.tre-hero h1 {
+    letter-spacing: -2px;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 120px;
+    transition: transform 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.wave-container {
+    padding-top: 5rem;
+    margin-bottom: -1px;
+}
+
+/* Category Cards */
+.category-card {
+    border: 1px solid #f1f5f9;
+    background: #ffffff;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.category-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05) !important;
+    border-color: #3b82f6;
+}
+
+.icon-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Accordion Customization */
+.accordion-button:not(.collapsed) {
+    background-color: #f8fafc;
+    color: #3b82f6;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0,0,0,.125);
+}
+
+.accordion-item {
+    border: none;
+    margin-bottom: 0.5rem;
+}
+
+.accordion-header .accordion-button {
+    border-radius: 0.5rem !important;
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-fade-in-delay {
+    animation: fadeIn 0.8s ease-out 0.3s forwards;
+    opacity: 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hover-up {
+    transition: transform 0.3s ease;
+}
+
+.hover-up:hover {
+    transform: translateY(-8px);
+}
+
+/* RTL Support */
+.rtl .ms-auto {
+    margin-right: auto !important;
+    margin-left: 0 !important;
+}
+
+.rtl .me-2 {
+    margin-left: 0.5rem !important;
+    margin-right: 0 !important;
+}
+
+.rtl small {
+    display: inline-block;
+}
+
+.rtl .accordion-button::after {
+    margin-right: auto;
+    margin-left: 0;
+}

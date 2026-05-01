@@ -85,7 +85,15 @@ export class SettingsService {
                 mineral_waters: 'Eaux Minérales',
                 manage_conventionnes: 'Conventionnés',
                 add_conventionne: 'Ajouter Conventionné',
-                Messagerie: 'Messagerie'
+                add_brand: 'Ajouter une marque',
+                actions: 'Actions',
+                marque: 'Marque',
+                notes: 'Notes',
+                search_brand: 'Rechercher une marque...',
+                water_brands_list: 'Liste des eaux minérales',
+                Messagerie: 'Messagerie',
+                thermal_baths: 'Bains Thermaux',
+                thermal_baths_subtitle: 'Découvrez les stations thermales et centres de thalassothérapie en Tunisie.'
             },
             en: {
                 dashboard: 'Dashboard',
@@ -96,7 +104,15 @@ export class SettingsService {
                 mineral_waters: 'Mineral Waters',
                 manage_conventionnes: 'Partners / Conventionnés',
                 add_conventionne: 'Add Partner',
-                Messagerie: 'Internal Chat'
+                add_brand: 'Add Brand',
+                actions: 'Actions',
+                marque: 'Brand',
+                notes: 'Notes',
+                search_brand: 'Search brand...',
+                water_brands_list: 'Mineral Water List',
+                Messagerie: 'Internal Chat',
+                thermal_baths: 'Thermal Baths',
+                thermal_baths_subtitle: 'Discover thermal stations and thalassotherapy centers in Tunisia.'
             },
             ar: {
                 dashboard: 'لوحة القيادة',
@@ -107,7 +123,15 @@ export class SettingsService {
                 mineral_waters: 'المياه المعدنية',
                 manage_conventionnes: 'الشركاء المتعاقدون',
                 add_conventionne: 'إضافة شريك جديد',
-                Messagerie: 'المراسلات'
+                add_brand: 'إضافة علامة تجارية',
+                actions: 'إجراءات',
+                marque: 'العلامة التجارية',
+                notes: 'ملاحظات',
+                search_brand: 'بحث عن علامة...',
+                water_brands_list: 'قائمة المياه المعدنية',
+                Messagerie: 'المراسلات',
+                thermal_baths: 'البحث عن العيون والأبشار',
+                thermal_baths_subtitle: 'استكشف المحطات الاستشفائية ومراكز العلاج بمياه البحر في تونس.'
             }
         };
         return translations[lang]?.[key] || key;

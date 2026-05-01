@@ -15,12 +15,12 @@
                     <li class="nav-item"><a class="nav-link px-3" href="#services">Nos Services</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="#impact">Notre Impact</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="#eaux-minerales">Eaux Minérales</a></li>
-                    <li class="nav-item ms-lg-4">
-                        <a class="btn btn-premium btn-premium-primary border shadow-sm" style="color: #0061f2;"
-                            routerLink="/login">Se Connecter</a>
+                    <li class="nav-item"><a class="nav-link px-3" href="#bains-thermaux">Bains Thermaux</a></li>
+                    <li class="nav-item ms-lg-3">
+                        <a class="btn btn-login-pill" routerLink="/login">SE CONNECTER</a>
                     </li>
                     <li class="nav-item ms-2">
-                        <a class="btn btn-premium btn-primary shadow" routerLink="/register">Commencer</a>
+                        <a class="btn btn-start-pill shadow-sm" routerLink="/register">COMMENCER</a>
                     </li>
                 </ul>
             </div>
@@ -118,6 +118,40 @@
             </div>
         </div>
     </section>
+    <!-- Tunisians Abroad Featured Section -->
+    <section class="py-5 bg-white overflow-hidden">
+        <div class="container bg-tre-pro rounded-5 shadow-2xl p-0 overflow-hidden">
+            <div class="row g-0">
+                <div class="col-lg-6 p-5 d-flex flex-column justify-content-center text-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="tre-badge pulse me-3">ESPACE DÉDIÉ</span>
+                        <h5 class="text-uppercase tracking-widest mb-0 opacity-75 small fw-bold">Tunisiens à l'étranger</h5>
+                    </div>
+                    <h2 class="display-5 fw-bold mb-4">Votre voix compte aussi loin que vous soyez.</h2>
+                    <p class="lead mb-5 opacity-90">
+                        OTIC s'engage à protéger les intérêts des tunisiens résidant à l'étranger. 
+                        Bénéficiez d'un accompagnement personnalisé pour vos réclamations bancaires, de transport et administrations en Tunisie.
+                    </p>
+                    <div class="d-flex gap-3 mt-2">
+                        <a routerLink="/tunisiens-etranger" class="btn btn-light btn-lg px-4 py-3 rounded-pill fw-bold shadow-lg">
+                            Découvrir l'Espace TRE
+                        </a>
+                        <a routerLink="/register" class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill fw-bold">
+                            S'inscrire
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6 d-none d-lg-block position-relative min-vh-50">
+                    <img src="tunisian_abroad.png" class="img-fit-cover animate-scroll-scale" alt="Tunisiens à l'étranger">
+                    <div class="glass-overlay position-absolute bottom-0 start-0 w-100 p-4">
+                        <p class="mb-0 small fw-medium text-white opacity-75">
+                            <i class="bi bi-geo-alt-fill me-2"></i> Un service global pour une protection locale.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Impact/Stats -->
     <section id="impact" class="py-5 my-5">
@@ -155,6 +189,17 @@
         </div>
     </section>
 
+    <!-- Thermal Baths Section -->
+    <section id="bains-thermaux" class="py-5 bg-light">
+        <div class="container overflow-hidden">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold h1">Bains Thermaux en Tunisie</h2>
+                <p class="text-muted">Explorez les richesses thermales de la Tunisie pour votre bien-être et votre santé.</p>
+            </div>
+            <app-thermal-baths [hideTitle]="true"></app-thermal-baths>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer-pro">
         <div class="container">
@@ -175,6 +220,7 @@
                         <li><a href="#" class="footer-link small">Accueil</a></li>
                         <li><a href="#services" class="footer-link small">Services</a></li>
                         <li><a href="#eaux-minerales" class="footer-link small">Eaux Minérales</a></li>
+                        <li><a href="#bains-thermaux" class="footer-link small">Bains Thermaux</a></li>
                         <li><a href="/login" class="footer-link small">Espace Client</a></li>
                     </ul>
                 </div>

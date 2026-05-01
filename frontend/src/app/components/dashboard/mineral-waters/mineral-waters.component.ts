@@ -1,7 +1,10 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Api } from '../../../services/api';
 import { SettingsService } from '../../../services/settings.service';
+import { AuthService } from '../../../services/auth.service';
+import { AdminService } from '../../../services/admin.service';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -9,7 +12,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-mineral-waters',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="container-fluid dashboard-fade-in" [ngClass]="hideTitle ? 'p-0' : 'p-4'" [dir]="settings.currentSettings.language === 'ar' ? 'rtl' : 'ltr'">
       <div class="row mb-4 align-items-center" *ngIf="!hideTitle">
@@ -21,9 +24,12 @@ Chart.register(...registerables);
           <p class="text-muted mb-0">{{ translate('mineral_waters_subtitle', 'Analyses et statistiques comparatives des eaux embouteillées en Tunisie.') }}</p>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
-          <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill border border-info-subtle">
-            <i class="bi bi-calendar3 me-2"></i>Dernière mise à jour: Mars 2026
-          </span>
+          <button *ngIf="isSuperAdmin" class="btn btn-add-brand rounded-pill px-4 py-2 me-3 shadow-lg" (click)="openAddModal()">
+            <div class="d-flex align-items-center">
+              <span class="icon-box me-2"><i class="bi bi-plus-lg"></i></span>
+              <span class="fw-bold">{{ translate('add_brand', 'Ajouter une marque') }}</span>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -130,7 +136,8 @@ Chart.register(...registerables);
                 <th class="py-3">TDS (mg/L)</th>
                 <th class="py-3">pH</th>
                 <th class="py-3">Nitrates (NO₃⁻)</th>
-                <th class="py-3 pe-4">{{ translate('notes', 'Notes') }}</th>
+                <th class="py-3">{{ translate('notes', 'Notes') }}</th>
+                <th class="py-3 pe-4 text-end" *ngIf="isSuperAdmin">{{ translate('actions', 'Actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -151,14 +158,24 @@ Chart.register(...registerables);
                         {{ brand.nitrates }}
                     </span>
                 </td>
-                <td class="pe-4">
+                <td>
                   <span class="badge py-2 px-3 rounded-pill note-badge shadow-sm" [ngClass]="getNoteClass(brand.notes)">
                     {{ brand.notes }}
                   </span>
                 </td>
+                <td class="pe-4 text-end" *ngIf="isSuperAdmin">
+                  <div class="btn-group shadow-sm rounded-pill overflow-hidden">
+                    <button class="btn btn-sm btn-outline-primary border-0 px-3" (click)="openEditModal(brand)" title="Modifier">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger border-0 px-3" (click)="onDelete(brand._id)" title="Supprimer">
+                      <i class="bi bi-trash-fill"></i>
+                    </button>
+                  </div>
+                </td>
               </tr>
               <tr *ngIf="filteredBrands.length === 0">
-                <td colspan="5" class="text-center py-5">
+                <td [attr.colspan]="isSuperAdmin ? 6 : 5" class="text-center py-5">
                   <div class="py-4">
                     <i class="bi bi-slash-circle fs-1 text-muted opacity-25 mb-3 d-block"></i>
                     <p class="text-muted">Aucune marque ne correspond à votre recherche.</p>
@@ -167,6 +184,82 @@ Chart.register(...registerables);
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Add/Edit Modal -->
+      <div class="custom-modal-backdrop" *ngIf="showModal" (click)="closeModal()"></div>
+      <div class="custom-modal" *ngIf="showModal">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="modal-header bg-gradient-primary text-white py-3">
+              <h5 class="modal-title fw-bold">
+                <i class="bi" [ngClass]="editingBrandId ? 'bi-pencil-square' : 'bi-plus-lg'"></i>
+                {{ editingBrandId ? 'Modifier la marque' : 'Ajouter une nouvelle marque' }}
+              </h5>
+              <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
+            </div>
+            <div class="modal-body p-4 bg-light-subtle">
+              <form #brandForm="ngForm">
+                <div class="row g-4">
+                  <!-- Name Input -->
+                  <div class="col-12">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">IDENTITÉ DE LA MARQUE</label>
+                    <div class="input-group custom-input-group shadow-sm">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-tag text-primary"></i></span>
+                      <input type="text" class="form-control border-start-0 ps-0" name="marque" [(ngModel)]="brandModel.marque" required placeholder="Nom de la marque (ex: Sabi)">
+                    </div>
+                  </div>
+
+                  <!-- TDS & pH -->
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">TDS (mg/L)</label>
+                    <div class="input-group custom-input-group shadow-sm">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-moisture text-info"></i></span>
+                      <input type="text" class="form-control border-start-0 ps-0" name="tds" [(ngModel)]="brandModel.tds" placeholder="Valeur TDS">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">POTENTIEL pH</label>
+                    <div class="input-group custom-input-group shadow-sm">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-activity text-warning"></i></span>
+                      <input type="text" class="form-control border-start-0 ps-0" name="ph" [(ngModel)]="brandModel.ph" placeholder="Valeur pH">
+                    </div>
+                  </div>
+
+                  <!-- Nitrates -->
+                  <div class="col-12">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">NITRATES (NO₃⁻)</label>
+                    <div class="input-group custom-input-group shadow-sm">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-virus text-danger"></i></span>
+                      <input type="text" class="form-control border-start-0 ps-0" name="nitrates" [(ngModel)]="brandModel.nitrates" placeholder="Taux de nitrates">
+                    </div>
+                  </div>
+
+                  <!-- Quality Selection -->
+                  <div class="col-12">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">INDICE DE QUALITÉ</label>
+                    <div class="quality-selector d-flex gap-2">
+                       <div *ngFor="let opt of ['Excellent', 'Bien', 'Passable', 'Inacceptable']" 
+                            (click)="brandModel.notes = opt"
+                            [class.active]="brandModel.notes === opt"
+                            class="quality-option flex-grow-1 text-center p-2 rounded-3 cursor-pointer transition"
+                            [ngClass]="getNoteClass(opt)">
+                         {{ opt }}
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer border-0 p-4 bg-white">
+              <button type="button" class="btn btn-light-soft rounded-pill px-4 fw-semibold" (click)="closeModal()">Annuler</button>
+              <button type="button" class="btn btn-primary-gradient rounded-pill px-5 shadow animate-pulse-slow" 
+                      [disabled]="!brandModel.marque" (click)="onSubmit()">
+                {{ editingBrandId ? 'Mettre à jour' : 'Enregistrer la marque' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -250,6 +343,134 @@ Chart.register(...registerables);
 
     .dashboard-fade-in { animation: fadeIn 0.5s ease-out; }
 
+    .btn-add-brand {
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: white;
+      border: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-add-brand:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4) !important;
+      color: white;
+    }
+    .btn-add-brand .icon-box {
+      background: rgba(255, 255, 255, 0.2);
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .bg-gradient-primary {
+      background: linear-gradient(135deg, #1e293b, #334155);
+    }
+
+    .custom-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 1050;
+    }
+
+    .custom-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      max-width: 550px;
+      z-index: 1060;
+      animation: modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .custom-input-group {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+    .custom-input-group:focus-within {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
+    }
+    .custom-input-group .input-group-text {
+      border: none;
+      padding-left: 1.25rem;
+    }
+    .custom-input-group input {
+      border: none;
+      padding: 0.75rem 1rem;
+      font-weight: 500;
+    }
+    .custom-input-group input:focus {
+      box-shadow: none;
+    }
+
+    .quality-option {
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0.6;
+      border: 2px solid transparent !important;
+    }
+    .quality-option:hover { opacity: 0.9; }
+    .quality-option.active {
+      opacity: 1;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-color: rgba(255,255,255,0.3) !important;
+    }
+
+    .btn-primary-gradient {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: white;
+      border: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .btn-primary-gradient:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.5);
+      color: white;
+    }
+    .btn-primary-gradient:disabled {
+      background: #cbd5e1;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-light-soft {
+      background: #f1f5f9;
+      color: #64748b;
+      border: none;
+    }
+    .btn-light-soft:hover { background: #e2e8f0; color: #475569; }
+
+    .animate-pulse-slow {
+      animation: pulse-slow 3s infinite;
+    }
+
+    @keyframes pulse-slow {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+
+    @keyframes modalScaleUp {
+      from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
@@ -269,12 +490,30 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
   qualityChart: any;
   phChart: any;
 
+  isSuperAdmin = false;
+  showModal = false;
+  editingBrandId: string | null = null;
+  brandModel: any = {
+    marque: '',
+    tds: '',
+    ph: '',
+    nitrates: '',
+    notes: 'Bien'
+  };
+
   constructor(
     public api: Api,
-    public settings: SettingsService
+    public settings: SettingsService,
+    private auth: AuthService,
+    private adminService: AdminService
   ) {}
 
   ngOnInit(): void {
+    // Check if user is super admin
+    this.auth.currentUser$.subscribe(user => {
+      this.isSuperAdmin = user?.role === 'super_admin';
+    });
+
     // 1. Try to load from localStorage for truly instant UI on page refresh
     const cached = localStorage.getItem('otic_water_brands');
     if (cached) {
@@ -449,6 +688,64 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
           y: { beginAtZero: true, grid: { display: false } },
           x: { grid: { display: false } }
         }
+      }
+    });
+  }
+
+  // --- CRUD Logic ---
+  openAddModal() {
+    this.editingBrandId = null;
+    this.brandModel = { marque: '', tds: '', ph: '', nitrates: '', notes: 'Bien' };
+    this.showModal = true;
+  }
+
+  openEditModal(brand: any) {
+    this.editingBrandId = brand._id;
+    this.brandModel = { ...brand };
+    this.showModal = true;
+  }
+
+  closeModal() {
+    this.showModal = false;
+  }
+
+  onSubmit() {
+    if (this.editingBrandId) {
+      this.adminService.updateWaterBrand(this.editingBrandId, this.brandModel).subscribe({
+        next: () => {
+          this.refreshData();
+          this.closeModal();
+        },
+        error: (err) => alert('Erreur lors de la modification: ' + (err.error?.msg || err.message))
+      });
+    } else {
+      this.adminService.createWaterBrand(this.brandModel).subscribe({
+        next: () => {
+          this.refreshData();
+          this.closeModal();
+        },
+        error: (err) => alert('Erreur lors de l\'ajout: ' + (err.error?.msg || err.message))
+      });
+    }
+  }
+
+  onDelete(id: string) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette marque ?')) {
+      this.adminService.deleteWaterBrand(id).subscribe({
+        next: () => this.refreshData(),
+        error: (err) => alert('Erreur lors de la suppression: ' + (err.error?.msg || err.message))
+      });
+    }
+  }
+
+  refreshData() {
+    this.api.getWaterBrands(true).subscribe({
+      next: (data) => {
+        this.brands = data;
+        this.filteredBrands = [...this.brands];
+        this.calculateBasicStats();
+        localStorage.setItem('otic_water_brands', JSON.stringify(data));
+        this.initCharts();
       }
     });
   }

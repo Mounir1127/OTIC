@@ -40,6 +40,47 @@
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
+.tre-nav-btn {
+    font-weight: 600 !important;
+    color: #0061f2 !important;
+    background: rgba(0, 97, 242, 0.08);
+    border-radius: 50px;
+    padding: 0.5rem 1.25rem !important;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 1px solid rgba(0, 97, 242, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 97, 242, 0.05);
+}
+
+.tre-nav-btn:hover {
+    background: rgba(0, 97, 242, 0.15) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 97, 242, 0.1);
+}
+
+.tre-badge {
+    background: #ffcc00;
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-right: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(255, 204, 0, 0.3);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.4); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 204, 0, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); }
+}
+
+.tre-badge.pulse {
+    animation: pulse 2.5s infinite;
+}
+
 /* Hero Section */
 .hero-section {
     position: relative;
@@ -159,13 +200,47 @@
     color: white;
 }
 
+/* Navbar Pill Buttons */
+.btn-login-pill {
+    background: white;
+    color: #0061f2 !important;
+    border: 2px solid #0061f2;
+    border-radius: 50px;
+    padding: 0.5rem 1.75rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.btn-login-pill:hover {
+    background: #f0f7ff;
+    transform: translateY(-1px);
+}
+
+.btn-start-pill {
+    background: #0061f2;
+    color: white !important;
+    border: 2px solid #0061f2;
+    border-radius: 50px;
+    padding: 0.5rem 1.75rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.btn-start-pill:hover {
+    background: #0056d6;
+    border-color: #0056d6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 97, 242, 0.2);
+}
+
 /* Animations */
 @keyframes fadeInUp {
     from {
         opacity: 0;
         transform: translateY(30px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -181,9 +256,51 @@
     }
 }
 
+.bg-tre-pro {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.img-fit-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.glass-overlay {
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.8), transparent);
+    backdrop-filter: blur(4px);
+}
+
+.min-vh-50 {
+    min-height: 400px;
+}
+
+.tracking-widest {
+    letter-spacing: 0.2em;
+}
+
+.animate-scroll-scale {
+    transition: transform 1s ease;
+}
+
+.container:hover .animate-scroll-scale {
+    transform: scale(1.05);
+}
+
 .image-box.primary-shadow {
     box-shadow: 0 30px 60px rgba(0, 97, 242, 0.15);
-    transition: all 0.5s ease;
+    transition: all 0.3s ease;
+}
+
+.icon-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
 }
 
 .experience-badge {

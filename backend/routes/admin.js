@@ -7,7 +7,10 @@ const Reclamation = require('../models/Reclamation');
 const Notification = require('../models/Notification');
 const Governorate = require('../models/Governorate');
 const bcrypt = require('bcryptjs');
+const WaterBrand = require('../models/WaterBrand');
+const ThermalBath = require('../models/ThermalBath');
 const { sendAssignmentEmail, sendWelcomeEmail } = require('../utils/emailService');
+const { generateReclamationPDF } = require('../utils/pdfGenerator');
 
 // Helper to log admin actions
 const logAdminAction = (msg) => {
@@ -243,12 +246,23 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
 
         await reclamation.save();
 
-        // Send Email to the assigned partner (in background to not block the response)
+        // Send Email to the assigned partner with PDF attachment
         const emailTo = partner.email;
         if (emailTo) {
-            sendAssignmentEmail(emailTo, reclamation, partner).catch(emailErr => {
-                console.error('[AssignEmail] Background sending failed:', emailErr.message);
-            });
+            try {
+                // Generate PDF Buffer
+                const pdfBuffer = await generateReclamationPDF(reclamation);
+                
+                // Send Email with attachment
+                sendAssignmentEmail(emailTo, reclamation, partner, pdfBuffer).catch(emailErr => {
+                    console.error('[AssignEmail] Background sending failed:', emailErr.message);
+                });
+            } catch (pdfErr) {
+                console.error('[PDF Gen] Failed to generate PDF, sending email without attachment:', pdfErr);
+                sendAssignmentEmail(emailTo, reclamation, partner).catch(emailErr => {
+                    console.error('[AssignEmail] Background sending failed:', emailErr.message);
+                });
+            }
         } else {
             console.warn('[AssignEmail] No email found for partner:', partner.nom);
         }
@@ -633,6 +647,125 @@ router.get('/stats', [auth, adminAuth], async (req, res) => {
 
     } catch (err) {
         console.error('Stats Error:', err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   POST api/admin/water-brands
+// @desc    Add a new water brand
+// @access  Private (Super Admin)
+router.post('/water-brands', [auth, superAdminAuth], async (req, res) => {
+    const { marque, tds, ph, nitrates, notes } = req.body;
+    try {
+        let brand = await WaterBrand.findOne({ marque });
+        if (brand) {
+            return res.status(400).json({ msg: 'Cette marque existe déjà' });
+        }
+
+        brand = new WaterBrand({ marque, tds, ph, nitrates, notes });
+        await brand.save();
+        res.json(brand);
+    } catch (err) {
+        console.error('POST WaterBrand Error:', err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   PUT api/admin/water-brand/:id
+// @desc    Update a water brand
+// @access  Private (Super Admin)
+router.put('/water-brand/:id', [auth, superAdminAuth], async (req, res) => {
+    const { marque, tds, ph, nitrates, notes } = req.body;
+    try {
+        let brand = await WaterBrand.findById(req.params.id);
+        if (!brand) return res.status(404).json({ msg: 'Marque non trouvée' });
+
+        if (marque) brand.marque = marque;
+        if (tds) brand.tds = tds;
+        if (ph) brand.ph = ph;
+        if (nitrates) brand.nitrates = nitrates;
+        if (notes) brand.notes = notes;
+
+        await brand.save();
+        res.json(brand);
+    } catch (err) {
+        console.error('PUT WaterBrand Error:', err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   DELETE api/admin/water-brand/:id
+// @desc    Delete a water brand
+// @access  Private (Super Admin)
+router.delete('/water-brand/:id', [auth, superAdminAuth], async (req, res) => {
+    try {
+        const brand = await WaterBrand.findById(req.params.id);
+        if (!brand) return res.status(404).json({ msg: 'Marque non trouvée' });
+
+        await WaterBrand.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Marque supprimée' });
+    } catch (err) {
+        console.error('DELETE WaterBrand Error:', err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   POST api/admin/thermal-baths
+// @desc    Add a new thermal bath
+// @access  Private (Super Admin)
+router.post('/thermal-baths', [auth, superAdminAuth], async (req, res) => {
+    const { name, location, temperature, indications, description, type } = req.body;
+    try {
+        let bath = await ThermalBath.findOne({ name });
+        if (bath) {
+            return res.status(400).json({ msg: 'Cette station existe déjà' });
+        }
+
+        bath = new ThermalBath({ name, location, temperature, indications, description, type });
+        await bath.save();
+        res.json(bath);
+    } catch (err) {
+        console.error('POST ThermalBath Error:', err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   PUT api/admin/thermal-bath/:id
+// @desc    Update a thermal bath
+// @access  Private (Super Admin)
+router.put('/thermal-bath/:id', [auth, superAdminAuth], async (req, res) => {
+    const { name, location, temperature, indications, description, type } = req.body;
+    try {
+        let bath = await ThermalBath.findById(req.params.id);
+        if (!bath) return res.status(404).json({ msg: 'Station non trouvée' });
+
+        if (name) bath.name = name;
+        if (location) bath.location = location;
+        if (temperature) bath.temperature = temperature;
+        if (indications) bath.indications = indications;
+        if (description) bath.description = description;
+        if (type) bath.type = type;
+
+        await bath.save();
+        res.json(bath);
+    } catch (err) {
+        console.error('PUT ThermalBath Error:', err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   DELETE api/admin/thermal-bath/:id
+// @desc    Delete a thermal bath
+// @access  Private (Super Admin)
+router.delete('/thermal-bath/:id', [auth, superAdminAuth], async (req, res) => {
+    try {
+        const bath = await ThermalBath.findById(req.params.id);
+        if (!bath) return res.status(404).json({ msg: 'Station non trouvée' });
+
+        await ThermalBath.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Station supprimée' });
+    } catch (err) {
+        console.error('DELETE ThermalBath Error:', err.message);
         res.status(500).send('Server error');
     }
 });

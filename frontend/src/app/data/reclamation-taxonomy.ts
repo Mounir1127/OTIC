@@ -149,6 +149,16 @@ export const RECLAMATION_SECTORS = [
             "Services publics délégués",
             "Établissements publics économiques"
         ]
+    },
+    {
+        name: "Tunisiens à l'Étranger",
+        subSectors: [
+            "Transferts d’argent",
+            "Bagages",
+            "Services touristiques (TRE)",
+            "Fraude commerciale (International)",
+            "Questions administratives et consulaires"
+        ]
     }
 ];
 

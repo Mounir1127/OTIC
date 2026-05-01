@@ -84,6 +84,6 @@ export class RegisterComponent {
     }
 
     socialLogin(platform: string) {
-        window.location.href = `http://localhost:5000/api/auth/${platform}`;
+        window.location.href = `http://localhost:5000/auth/${platform}`;
     }
 }

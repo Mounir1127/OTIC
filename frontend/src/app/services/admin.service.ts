@@ -104,6 +104,30 @@ export class AdminService {
         return this.http.get(`${this.apiUrl}/stats${params}`, { headers: this.getHeaders() });
     }
 
+    createWaterBrand(brandData: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/water-brands`, brandData, { headers: this.getHeaders() });
+    }
+
+    updateWaterBrand(id: string, brandData: any): Observable<any> {
+        return this.http.put(`${this.apiUrl}/water-brand/${id}`, brandData, { headers: this.getHeaders() });
+    }
+
+    deleteWaterBrand(id: string): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/water-brand/${id}`, { headers: this.getHeaders() });
+    }
+
+    createThermalBath(bathData: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/thermal-baths`, bathData, { headers: this.getHeaders() });
+    }
+
+    updateThermalBath(id: string, bathData: any): Observable<any> {
+        return this.http.put(`${this.apiUrl}/thermal-bath/${id}`, bathData, { headers: this.getHeaders() });
+    }
+
+    deleteThermalBath(id: string): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/thermal-bath/${id}`, { headers: this.getHeaders() });
+    }
+
     triggerRefresh() {
         this.refreshUsersSource.next();
     }

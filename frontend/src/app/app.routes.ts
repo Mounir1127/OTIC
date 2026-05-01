@@ -20,13 +20,17 @@ import { ConsumersListComponent } from './components/dashboard/admin/consumers-l
 import { AllReclamationsComponent } from './components/dashboard/admin/all-reclamations/all-reclamations.component';
 import { StatsComponent } from './components/dashboard/admin/stats/stats.component';
 import { MineralWatersComponent } from './components/dashboard/mineral-waters/mineral-waters.component';
+import { ThermalBathsComponent } from './components/dashboard/thermal-baths/thermal-baths.component';
 import { ConventionnesListComponent } from './components/dashboard/admin/conventionnes-list/conventionnes-list.component';
 import { MessagesComponent } from './components/dashboard/admin/messages/messages.component';
 import { ForgotPasswordComponent } from './components/auth/forgot-password/forgot-password.component';
+import { TunisiansAbroadComponent } from './components/tunisians-abroad/tunisians-abroad.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
     { path: 'eaux-minerales', component: MineralWatersComponent },
+    { path: 'bains-thermaux', component: ThermalBathsComponent },
+    { path: 'tunisiens-etranger', component: TunisiansAbroadComponent },
     { path: 'login', component: LoginComponent },
     { path: 'register', component: RegisterComponent },
     { path: 'forgot-password', component: ForgotPasswordComponent },
@@ -52,7 +56,8 @@ export const routes: Routes = [
             { path: 'admin/stats', component: StatsComponent },
             { path: 'admin/conventionnes', component: ConventionnesListComponent },
             { path: 'admin/messages', component: MessagesComponent },
-            { path: 'mineral-waters', component: MineralWatersComponent }
+            { path: 'mineral-waters', component: MineralWatersComponent },
+            { path: 'thermal-baths', component: ThermalBathsComponent }
         ]
     },
     { path: '**', redirectTo: '' }

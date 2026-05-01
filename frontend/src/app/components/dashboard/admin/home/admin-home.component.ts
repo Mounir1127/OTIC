@@ -104,7 +104,10 @@ import { Api } from '../../../../services/api';
                         <tr *ngFor="let user of consumers" class="user-row">
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-circle-pro me-3 fw-bold">{{user.prenom[0]}}{{user.nom[0]}}</div>
+                                    <div class="avatar-circle-pro me-3 fw-bold overflow-hidden">
+                                        <img [src]="user.photoProfil" *ngIf="user.photoProfil" class="img-fluid w-100 h-100" style="object-fit: cover;">
+                                        <span *ngIf="!user.photoProfil">{{user.prenom?.[0]}}{{user.nom?.[0]}}</span>
+                                    </div>
                                     <div>
                                         <h6 class="mb-0 fw-bold">{{user.prenom}} {{user.nom}}</h6>
                                         <small class="text-muted opacity-75">Client Régional</small>

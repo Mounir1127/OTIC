@@ -3,11 +3,12 @@ import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Api } from '../../services/api';
 import { MineralWatersComponent } from '../dashboard/mineral-waters/mineral-waters.component';
+import { ThermalBathsComponent } from '../dashboard/thermal-baths/thermal-baths.component';
 
 @Component({
     selector: 'app-home',
     standalone: true,
-    imports: [RouterModule, CommonModule, MineralWatersComponent],
+    imports: [RouterModule, CommonModule, MineralWatersComponent, ThermalBathsComponent],
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.css']
 })

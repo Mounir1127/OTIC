@@ -21,8 +21,9 @@ const transporter = nodemailer.createTransport({
  * @param {string} to - Partner email
  * @param {object} reclamation - Reclamation details
  * @param {object} partner - Partner details (nom)
+ * @param {Buffer} pdfBuffer - Optional PDF buffer attachment
  */
-const sendAssignmentEmail = async (to, reclamation, partner) => {
+const sendAssignmentEmail = async (to, reclamation, partner, pdfBuffer = null) => {
     const mailOptions = {
         from: process.env.EMAIL_FROM || '"OTIC Admin" <noreply@otic.tn>',
         to: to,
@@ -44,17 +45,24 @@ const sendAssignmentEmail = async (to, reclamation, partner) => {
                         <p style="margin: 15px 0 5px 0;"><strong>Description :</strong></p>
                         <p style="margin: 0; font-style: italic; color: #64748b;">"${reclamation.description || 'Pas de description'}"</p>
                     </div>
+                    <p>Le document récapitulatif est joint à cet email en format PDF.</p>
                     <p>Veuillez vous connecter à votre espace partenaire pour traiter ce dossier dès que possible.</p>
                 </div>
                 <div style="background-color: #f1f5f9; padding: 15px; text-align: center; color: #94a3b8; font-size: 12px;">
                     © 2026 Organisation Tunisienne pour l'Information du Consommateur (OTIC)
                 </div>
             </div>
-        `
+        `,
+        attachments: pdfBuffer ? [
+            {
+                filename: `reclamation_${reclamation.trackingCode}.pdf`,
+                content: pdfBuffer
+            }
+        ] : []
     };
 
     try {
-        console.log(`[EmailService] Attempting to send assignment email to ${to}`);
+        console.log(`[EmailService] Attempting to send assignment email to ${to} ${pdfBuffer ? 'with PDF attachment' : ''}`);
         const info = await transporter.sendMail(mailOptions);
         console.log('[EmailService] Email sent:', info.messageId);
         return { success: true, messageId: info.messageId };

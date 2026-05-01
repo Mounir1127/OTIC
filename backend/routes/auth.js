@@ -6,18 +6,43 @@ const User = require("../models/User");
 const mongoose = require("mongoose");
 const passport = require('passport');
 const { sendWelcomeEmail, sendResetLinkEmail } = require("../utils/emailService");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Set up Multer for profile photos
+const profileUploadDir = path.join(__dirname, '../uploads/profile-pictures');
+if (!fs.existsSync(profileUploadDir)) {
+    fs.mkdirSync(profileUploadDir, { recursive: true });
+}
+
+const profileStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, profileUploadDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, `profile-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
+    }
+});
+
+const uploadProfile = multer({ 
+    storage: profileStorage,
+    limits: { fileSize: 5000000 }, // 5MB limit
+    fileFilter: function (req, file, cb) {
+        const filetypes = /jpeg|jpg|png|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error("Error: File upload only supports the following filetypes - " + filetypes));
+    }
+});
 
 // @route   POST api/auth/register
 // @desc    Register user
 // @access  Public
 router.post("/register", async (req, res) => {
-    // Check if database is connected
-    const mongoose = require('mongoose');
-    if (mongoose.connection.readyState !== 1) {
-        console.error('Database is not connected. Connection state:', mongoose.connection.readyState);
-        return res.status(503).json({ msg: "Database connection is not ready. Please try again later or check server configuration." });
-    }
-
     const { nom, prenom, email, telephone, cin, password, adresse } = req.body;
 
     try {
@@ -36,17 +61,24 @@ router.post("/register", async (req, res) => {
             return res.status(400).json({ msg: "Please provide complete address information (ville, region, codePostal)" });
         }
 
-        // Check email OR cin uniqueness
-        let user = await User.findOne({ $or: [{ email }, ...(cin ? [{ cin }] : [])] });
+        // Check email OR cin uniqueness - CASE INSENSITIVE for email
+        const normalizedEmail = email.trim().toLowerCase();
+        let user = await User.findOne({ 
+            $or: [
+                { email: { $regex: new RegExp("^" + normalizedEmail + "$", "i") } }, 
+                ...(cin ? [{ cin }] : [])
+            ] 
+        });
+        
         if (user) {
-            if (user.email === email) return res.status(400).json({ msg: "Cet email est déjà utilisé." });
+            if (user.email.toLowerCase() === normalizedEmail) return res.status(400).json({ msg: "Cet email est déjà utilisé." });
             if (cin && user.cin === cin) return res.status(400).json({ msg: "Ce numéro CIN est déjà utilisé." });
         }
 
         user = new User({
             nom,
             prenom,
-            email,
+            email: normalizedEmail,
             telephone,
             cin: cin || undefined,
             password,
@@ -118,33 +150,41 @@ router.post("/register", async (req, res) => {
 // @desc    Authenticate user & get token
 // @access  Public
 router.post("/login", async (req, res) => {
-    // Check if database is connected
-    const mongoose = require('mongoose');
-    if (mongoose.connection.readyState !== 1) {
-        console.error('Database is not connected. Connection state:', mongoose.connection.readyState);
-        return res.status(503).json({ msg: "Database connection is not ready. Please try again later or check server configuration." });
+    const { identifier, password } = req.body;
+    const identifierTrimmed = identifier ? identifier.trim() : '';
+    const passwordOriginal = password || '';
+
+    console.log('--- LOGIN REQUEST ---');
+    console.log('Identifier:', identifierTrimmed);
+
+    if (!identifierTrimmed || !passwordOriginal) {
+        return res.status(400).json({ msg: "Veuillez fournir un identifiant et un mot de passe" });
     }
 
-    const { identifier, password } = req.body;
-    console.log('--- LOGIN REQUEST ---');
-    console.log('Identifier:', identifier);
     try {
-        // Check if identifier matches email, telephone, or CIN
-        console.log('Login Attempt for identifier:', identifier);
+        // Check if identifier matches email (case-insensitive), telephone, or CIN
+        console.log('Login Attempt for identifier:', identifierTrimmed);
+        
+        const emailRegex = new RegExp("^" + identifierTrimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + "$", "i");
+        
         let user = await User.findOne({
-            $or: [{ email: identifier }, { telephone: identifier }, { cin: identifier }]
+            $or: [
+                { email: emailRegex }, 
+                { telephone: identifierTrimmed }, 
+                { cin: identifierTrimmed }
+            ]
         });
 
         if (!user) {
-            console.log('User not found for identifier:', identifier);
-            return res.status(400).json({ msg: "Invalid Credentials" });
+            console.log('User not found for identifier:', identifierTrimmed);
+            return res.status(400).json({ msg: "Identifiants invalides (Email, téléphone ou CIN non trouvé)" });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(passwordOriginal, user.password);
 
         if (!isMatch) {
             console.log('Password mismatch for user:', user.email);
-            return res.status(400).json({ msg: "Invalid Credentials" });
+            return res.status(400).json({ msg: "Mot de passe incorrect" });
         }
 
         const payload = {
@@ -315,6 +355,35 @@ router.post("/reset-password", async (req, res) => {
     } catch (err) {
         console.error(err.message);
         res.status(500).send("Erreur serveur");
+    }
+});
+
+// @route   POST api/auth/upload-photo
+// @desc    Upload profile photo
+// @access  Private
+router.post("/upload-photo", [require("../middleware/auth"), uploadProfile.single('photo')], async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ msg: "Veuillez sélectionner une image" });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: "Utilisateur non trouvé" });
+
+        // Update photo field - we'll store the URL path
+        // Important: Using internal URL that front-end can resolve
+        user.photoProfil = `http://localhost:5000/uploads/profile-pictures/${req.file.filename}`;
+        await user.save();
+
+        console.log(`[UploadPhoto] User ${user.email} updated profile picture: ${user.photoProfil}`);
+
+        res.json({ 
+            msg: "Photo de profil mise à jour",
+            photoProfil: user.photoProfil
+        });
+    } catch (err) {
+        console.error("[UploadPhoto Error]:", err.message);
+        res.status(500).json({ msg: "Erreur lors du téléchargement de l'image" });
     }
 });
 

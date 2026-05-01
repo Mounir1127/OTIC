@@ -23,9 +23,10 @@ import { Subscription, forkJoin } from 'rxjs';
                 <i class="bi bi-person-fill" *ngIf="!user?.photoProfil"></i>
                 <img [src]="user?.photoProfil" *ngIf="user?.photoProfil" class="rounded-circle img-fluid">
               </div>
-              <button class="btn btn-sm btn-light rounded-circle edit-avatar shadow-sm position-absolute bottom-0 end-0">
+              <button (click)="fileInput.click()" class="btn btn-sm btn-light rounded-circle edit-avatar shadow-sm position-absolute bottom-0 end-0">
                 <i class="bi bi-camera-fill"></i>
               </button>
+              <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;">
             </div>
             <div class="user-info ms-4 mb-2 text-white" [ngClass]="{'me-4': currentSettings.language === 'ar'}">
               <h2 class="fw-bold mb-0">{{ user?.prenom }} {{ user?.nom }}</h2>
@@ -453,6 +454,27 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     if (!this.user) {
       this.authService.getProfile().subscribe();
+    }
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      console.log('📸 File selected:', file.name, file.size);
+      this.loading = true;
+      this.authService.uploadPhoto(file).subscribe({
+        next: (res) => {
+          console.log('✅ Upload success:', res);
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('❌ Upload error:', err);
+          this.loading = false;
+          this.errorMsg = "Erreur lors de l'envoi de l'image";
+          this.cdr.detectChanges();
+        }
+      });
     }
   }
 

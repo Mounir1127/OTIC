@@ -3,6 +3,7 @@ const router = express.Router();
 const Reclamation = require('../models/Reclamation');
 const Governorate = require('../models/Governorate');
 const WaterBrand = require('../models/WaterBrand');
+const ThermalBath = require('../models/ThermalBath');
 
 // @route   GET api/public/stats
 // @desc    Get public statistics for home page
@@ -39,6 +40,19 @@ router.get('/water-brands', async (req, res) => {
     try {
         const brands = await WaterBrand.find().sort({ tds: 1 });
         res.json(brands);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   GET api/public/thermal-baths
+// @desc    Get all thermal baths data
+// @access  Public
+router.get('/thermal-baths', async (req, res) => {
+    try {
+        const baths = await ThermalBath.find().sort({ name: 1 });
+        res.json(baths);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');

@@ -116,6 +116,8 @@ router.post('/', [auth, upload.array('preuves', 10)], async (req, res) => {
             complainantType,
             raison_sociale,
             matricule_fiscal,
+            isTRE: req.body.isTRE === 'true',
+            treCategory: req.body.treCategory,
             statut: 'deposee',
             history: [{
                 date: Date.now(),

@@ -91,16 +91,19 @@ import { FormsModule } from '@angular/forms';
                                     <i class="bi bi-dot me-1"></i>{{ user.role.replace('_', ' ') }}
                                 </span>
                             </td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group">
-                                    <button class="btn btn-light-pro btn-sm rounded-circle me-2" [routerLink]="['/dashboard/admin-management/users/edit', user._id]">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-light-pro btn-sm rounded-circle text-danger" (click)="confirmDelete(user)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
+                             <td class="text-end pe-4">
+                                 <div class="btn-group" *ngIf="user.role !== 'super_admin'">
+                                     <button class="btn btn-light-pro btn-sm rounded-circle me-2" [routerLink]="['/dashboard/admin-management/users/edit', user._id]" title="Modifier">
+                                         <i class="bi bi-pencil"></i>
+                                     </button>
+                                     <button class="btn btn-light-pro btn-sm rounded-circle text-danger" (click)="confirmDelete(user)" title="Supprimer">
+                                         <i class="bi bi-trash"></i>
+                                     </button>
+                                 </div>
+                                 <div *ngIf="user.role === 'super_admin'" class="text-muted small">
+                                     <i class="bi bi-shield-lock-fill me-1"></i> Protégé
+                                 </div>
+                             </td>
                         </tr>
                     </tbody>
                 </table>

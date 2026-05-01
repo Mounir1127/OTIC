@@ -80,6 +80,13 @@ const ReclamationSchema = new mongoose.Schema({
     },
     dateResolution: {
         type: Date
+    },
+    isTRE: {
+        type: Boolean,
+        default: false
+    },
+    treCategory: {
+        type: String
     }
 });
 

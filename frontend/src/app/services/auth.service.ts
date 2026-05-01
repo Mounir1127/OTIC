@@ -73,4 +73,20 @@ export class AuthService {
     resetPassword(data: any): Observable<any> {
         return this.http.post(`${this.apiUrl}/reset-password`, data);
     }
+
+    uploadPhoto(file: File): Observable<any> {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('photo', file);
+        return this.http.post(`${this.apiUrl}/upload-photo`, formData, {
+            headers: { 'x-auth-token': token || '' }
+        }).pipe(
+            tap((res: any) => {
+                const current = this.currentUserSubject.value;
+                if (current) {
+                    this.currentUserSubject.next({ ...current, photoProfil: res.photoProfil });
+                }
+            })
+        );
+    }
 }

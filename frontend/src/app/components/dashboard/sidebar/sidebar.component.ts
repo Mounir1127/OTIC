@@ -47,8 +47,9 @@ import { startWith, switchMap } from 'rxjs/operators';
       <hr class="border-secondary opacity-50">
       <div class="dropdown">
         <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-          <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center me-2" [ngClass]="{'ms-2': currentSettings.language === 'ar'}" style="width: 32px; height: 32px;">
-            <i class="bi bi-person-fill text-dark"></i>
+          <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center me-2 overflow-hidden" [ngClass]="{'ms-2': currentSettings.language === 'ar'}" style="width: 32px; height: 32px;">
+            <i class="bi bi-person-fill text-dark" *ngIf="!user?.photoProfil"></i>
+            <img [src]="user?.photoProfil" *ngIf="user?.photoProfil" class="img-fluid w-100 h-100" style="object-fit: cover;">
           </div>
           <div class="d-flex flex-column">
             <strong *ngIf="user">{{ user.prenom }} {{ user.nom }}</strong>
@@ -208,12 +209,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { path: '/dashboard/admin/conventionnes', icon: 'bi-briefcase', labelKey: 'manage_conventionnes', exact: false },
         { path: '/dashboard/admin/messages', icon: 'bi-chat-dots-fill', labelKey: 'Messagerie', exact: false },
         { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
+        { path: '/dashboard/thermal-baths', icon: 'bi-water', labelKey: 'thermal_baths', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ],
       consommateur_simple: [
         { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
         { path: '/dashboard/reclamation', icon: 'bi-file-earmark-text', labelKey: 'my_reclamations', exact: false },
         { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
+        { path: '/dashboard/thermal-baths', icon: 'bi-water', labelKey: 'thermal_baths', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ],
       admin_regional: [
@@ -225,6 +228,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { path: '/dashboard/admin/conventionnes', icon: 'bi-briefcase', labelKey: 'manage_conventionnes', exact: false },
         { path: '/dashboard/admin/messages', icon: 'bi-chat-dots-fill', labelKey: 'Messagerie', exact: false },
         { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
+        { path: '/dashboard/thermal-baths', icon: 'bi-water', labelKey: 'thermal_baths', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ]
     };

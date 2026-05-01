@@ -2,12 +2,25 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('MongoDB Connected...');
+        const conn = await mongoose.connect(process.env.MONGODB_URI, {
+            autoIndex: true,
+        });
+        console.log(`MongoDB Connected: ${conn.connection.host}`);
+        
+        // Listen for connection errors after initial connection
+        mongoose.connection.on('error', err => {
+            console.error('MongoDB post-connection error:', err);
+        });
+
+        mongoose.connection.on('disconnected', () => {
+            console.warn('MongoDB disconnected! Attempting to reconnect...');
+        });
+
     } catch (err) {
         console.error('MongoDB Connection Error:', err.message);
         console.log('Backend will continue running, but DB functions may fail.');
-        // Don't exit process, allow fallback data to be used
+        // If connection fails initially, we'll try again in 5 seconds
+        setTimeout(connectDB, 5000);
     }
 };
 
