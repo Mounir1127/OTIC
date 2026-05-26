@@ -7,7 +7,7 @@
     <div class="card create-admin-card">
         <div class="card-header">
             <i class="bi bi-person-plus-fill"></i>
-            <h3>Nouveau Profil Administrateur Régional</h3>
+            <h3>Nouveau Profil Administrateur</h3>
         </div>
 
         <form (ngSubmit)="onSubmit()" #adminForm="ngForm">
@@ -34,28 +34,47 @@
                     <input type="password" [(ngModel)]="newAdmin.password" name="password" required
                         placeholder="••••••••">
                 </div>
-
+                
                 <div class="form-group">
-                    <label>Gouvernorat</label>
-                    <select [(ngModel)]="newAdmin.adresse.region" name="region" (change)="onRegionChange()" required>
-                        <option value="">Sélectionner une région</option>
-                        <option *ngFor="let g of governorates" [value]="g.governorate">{{g.governorate}}</option>
+                    <label>Type d'Administrateur</label>
+                    <select [(ngModel)]="newAdmin.role" name="role" required>
+                        <option value="admin_regional">Administrateur Régional (Tunisie)</option>
+                        <option value="admin_tre">Administrateur Diaspora (TRE)</option>
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label>Délégation / Ville</label>
-                    <select [(ngModel)]="newAdmin.adresse.ville" name="ville" (change)="onCityChange()" required>
-                        <option value="">Sélectionner une ville</option>
-                        <option *ngFor="let d of delegations" [value]="d.name">{{d.name}}</option>
-                    </select>
-                </div>
+                <ng-container *ngIf="newAdmin.role === 'admin_regional'">
+                    <div class="form-group">
+                        <label>Gouvernorat</label>
+                        <select [(ngModel)]="newAdmin.adresse.region" name="region" (change)="onRegionChange()" required>
+                            <option value="">Sélectionner une région</option>
+                            <option *ngFor="let g of governorates" [value]="g.governorate">{{g.governorate}}</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label>Code Postal</label>
-                    <input type="text" [(ngModel)]="newAdmin.adresse.codePostal" name="codePostal" readonly
-                        placeholder="Calculé automatiquement">
-                </div>
+                    <div class="form-group">
+                        <label>Délégation / Ville</label>
+                        <select [(ngModel)]="newAdmin.adresse.ville" name="ville" (change)="onCityChange()" required>
+                            <option value="">Sélectionner une ville</option>
+                            <option *ngFor="let d of delegations" [value]="d.name">{{d.name}}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Code Postal</label>
+                        <input type="text" [(ngModel)]="newAdmin.adresse.codePostal" name="codePostal" readonly
+                            placeholder="Calculé automatiquement">
+                    </div>
+                </ng-container>
+
+                <ng-container *ngIf="newAdmin.role === 'admin_tre'">
+                    <div class="form-group col-12">
+                        <div class="alert alert-info border-0 mb-0">
+                            <i class="bi bi-globe me-2"></i>
+                            L'administrateur Diaspora gérera toutes les réclamations des Tunisiens à l'étranger, sans distinction géographique.
+                        </div>
+                    </div>
+                </ng-container>
             </div>
 
             <div class="form-actions mt-4">

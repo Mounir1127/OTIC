@@ -83,7 +83,12 @@ import { FormsModule } from '@angular/forms';
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border-light-subtle fw-medium px-3 py-2 rounded-pill">
-                                    {{ user.adresse?.region || '---' }}
+                                    <ng-container *ngIf="user.isTRE">
+                                        <i class="bi bi-globe me-1"></i> {{ user.paysResidence }}
+                                    </ng-container>
+                                    <ng-container *ngIf="!user.isTRE">
+                                        {{ user.adresse?.region || '---' }}
+                                    </ng-container>
                                 </span>
                             </td>
                             <td>
@@ -92,13 +97,15 @@ import { FormsModule } from '@angular/forms';
                                 </span>
                             </td>
                              <td class="text-end pe-4">
-                                 <div class="btn-group" *ngIf="user.role !== 'super_admin'">
-                                     <button class="btn btn-light-pro btn-sm rounded-circle me-2" [routerLink]="['/dashboard/admin-management/users/edit', user._id]" title="Modifier">
-                                         <i class="bi bi-pencil"></i>
-                                     </button>
-                                     <button class="btn btn-light-pro btn-sm rounded-circle text-danger" (click)="confirmDelete(user)" title="Supprimer">
-                                         <i class="bi bi-trash"></i>
-                                     </button>
+                                 <div class="d-flex justify-content-end align-items-center" *ngIf="user.role !== 'super_admin'">
+                                     <div class="form-check form-switch mb-0" title="{{ user.isActive ? 'Désactiver' : 'Activer' }}">
+                                         <input class="form-check-input clickable" type="checkbox" role="switch" 
+                                                [checked]="user.isActive !== false" 
+                                                (change)="onToggleStatus(user)">
+                                         <label class="form-check-label small ms-1" [class.text-success]="user.isActive !== false" [class.text-danger]="user.isActive === false">
+                                             {{ user.isActive !== false ? 'Actif' : 'Inactif' }}
+                                         </label>
+                                     </div>
                                  </div>
                                  <div *ngIf="user.role === 'super_admin'" class="text-muted small">
                                      <i class="bi bi-shield-lock-fill me-1"></i> Protégé
@@ -156,6 +163,7 @@ import { FormsModule } from '@angular/forms';
     }
     .avatar-circle.super_admin { background: #fee2e2; color: #ef4444; }
     .avatar-circle.admin_regional { background: #f3e8ff; color: #8b5cf6; }
+    .avatar-circle.admin_tre { background: #d1fae5; color: #059669; }
     
     .role-pill {
         display: inline-flex; align-items: center;
@@ -165,6 +173,7 @@ import { FormsModule } from '@angular/forms';
     }
     .role-pill.super_admin { background: #fee2e2; color: #991b1b; }
     .role-pill.admin_regional { background: #f3e8ff; color: #6b21a8; }
+    .role-pill.admin_tre { background: #d1fae5; color: #065f46; }
     .role-pill.consommateur_simple { background: #f1f5f9; color: #475569; }
 
     .btn-light-pro { 
@@ -172,6 +181,10 @@ import { FormsModule } from '@angular/forms';
         width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
     }
     .btn-light-pro:hover { background: #e2e8f0; color: #1e293b; }
+
+    .form-check-input.clickable { cursor: pointer; }
+    .form-switch .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
+    .form-check-label { font-size: 0.8rem; font-weight: 600; min-width: 50px; text-align: left; }
 
     .search-box input { width: 100%; border-color: #e2e8f0; }
     .search-box input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
@@ -226,9 +239,9 @@ export class UsersListComponent implements OnInit {
 
   calculateStats() {
     this.stats.totalUsers = this.allUsers.length;
-    this.stats.totalAdmins = this.allUsers.filter(u => u.role === 'admin_regional' || u.role === 'super_admin').length;
+    this.stats.totalAdmins = this.allUsers.filter(u => u.role === 'admin_regional' || u.role === 'admin_tre' || u.role === 'super_admin').length;
     this.stats.totalConsumers = this.allUsers.filter(u => u.role === 'consommateur_simple').length;
-    
+
     this.statsList = [
       { id: 'all', label: 'Utilisateurs', icon: 'bi-people', value: this.stats.totalUsers },
       { id: 'admin', label: 'Admins', icon: 'bi-shield-shaded', value: this.stats.totalAdmins },
@@ -250,7 +263,7 @@ export class UsersListComponent implements OnInit {
 
     // Apply category filter
     if (this.selectedFilter === 'admin') {
-      result = result.filter(u => u.role === 'admin_regional' || u.role === 'super_admin');
+      result = result.filter(u => u.role === 'admin_regional' || u.role === 'admin_tre' || u.role === 'super_admin');
     } else if (this.selectedFilter === 'consommateur_simple') {
       result = result.filter(u => u.role === 'consommateur_simple');
     }
@@ -258,9 +271,9 @@ export class UsersListComponent implements OnInit {
     // Apply search term
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      result = result.filter(u => 
-        u.nom.toLowerCase().includes(term) || 
-        u.prenom.toLowerCase().includes(term) || 
+      result = result.filter(u =>
+        u.nom.toLowerCase().includes(term) ||
+        u.prenom.toLowerCase().includes(term) ||
         u.email.toLowerCase().includes(term)
       );
     }
@@ -268,16 +281,23 @@ export class UsersListComponent implements OnInit {
     this.filteredUsers = result;
   }
 
-  confirmDelete(user: any) {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer ${user.prenom} ${user.nom} ? Cette action est irréversible.`)) {
-      this.adminService.deleteUser(user._id).subscribe({
-        next: () => {
-          this.loadUsers();
+  onToggleStatus(user: any) {
+    const action = user.isActive === false ? 'activer' : 'désactiver';
+    if (confirm(`Voulez-vous vraiment ${action} le compte de ${user.prenom} ${user.nom} ?`)) {
+      this.adminService.toggleUserStatus(user._id).subscribe({
+        next: (res) => {
+          user.isActive = res.isActive;
+          this.cdr.detectChanges();
         },
         error: (err) => {
-          alert('Erreur lors de la suppression : ' + (err.error?.msg || err.message));
+          alert('Erreur lors de la modification du statut : ' + (err.error?.msg || err.message));
+          // Revert change in UI if error
+          this.loadUsers();
         }
       });
+    } else {
+      // Revert the checkbox if cancelled
+      this.loadUsers();
     }
   }
 }

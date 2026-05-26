@@ -20,6 +20,10 @@ const ConventionneSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user'
     },
+    isTRE: {
+        type: Boolean,
+        default: false
+    },
     dateCreation: {
         type: Date,
         default: Date.now

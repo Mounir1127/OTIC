@@ -3,7 +3,7 @@
     <a routerLink="/" class="home-btn" title="Retour à l'accueil">
         <i class="bi bi-house-door"></i>
     </a>
-    
+
     <!-- Blue Sidebar -->
     <div class="left-pane">
         <div class="water-waves"></div>
@@ -21,99 +21,124 @@
         <div class="form-card">
             <div class="form-header">
                 <h3>Créer un compte</h3>
-                <p class="text-muted small">Remplissez les informations ci-dessous pour commencer.</p>
+                <p class="text-muted small">Rejoignez-nous pour une meilleure expérience.</p>
+            </div>
+
+            <!-- Account Type Selector -->
+            <div class="account-type-selector mb-4">
+                <button type="button" class="type-btn" [class.active]="!user.isTRE" (click)="user.isTRE = false">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>Résident en Tunisie</span>
+                </button>
+                <button type="button" class="type-btn" [class.active]="user.isTRE" (click)="user.isTRE = true">
+                    <i class="bi bi-globe"></i>
+                    <span>Tunisien à l'étranger</span>
+                </button>
             </div>
 
             <form (ngSubmit)="register()">
                 <!-- Name Row -->
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Nom</label>
-                        <input type="text" class="form-control" [(ngModel)]="user.nom" name="nom" required placeholder="Ex: Ben Ali">
+                        <label class="form-label small fw-bold text-dark">Nom <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" [(ngModel)]="user.nom" name="nom" required minlength="2"
+                            placeholder="Ex: Ben Ali" (blur)="formatName('nom')">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Prénom</label>
-                        <input type="text" class="form-control" [(ngModel)]="user.prenom" name="prenom" required placeholder="Ex: Mohamed">
+                        <label class="form-label small fw-bold text-dark">Prénom <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" [(ngModel)]="user.prenom" name="prenom" required
+                            minlength="2" placeholder="Ex: Mohamed" (blur)="formatName('prenom')">
                     </div>
                 </div>
 
                 <!-- Email, Phone & CIN -->
                 <div class="row g-3 mb-3">
                     <div class="col-md-12">
-                        <label class="form-label small fw-bold">Email</label>
-                        <input type="email" class="form-control" [(ngModel)]="user.email" name="email" required placeholder="nom@exemple.com">
+                        <label class="form-label small fw-bold text-dark">Email <span
+                                class="text-danger">*</span></label>
+                        <input type="email" class="form-control" [(ngModel)]="user.email" name="email" required
+                            pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" placeholder="nom@exemple.com">
                     </div>
                 </div>
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Téléphone</label>
-                        <input type="text" class="form-control" [(ngModel)]="user.telephone" name="telephone" required placeholder="+216 -- --- ---">
+                        <label class="form-label small fw-bold text-dark">Téléphone <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" [(ngModel)]="user.telephone" name="telephone" required
+                            placeholder="+216 -- --- ---">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">N° CIN</label>
-                        <input type="text" class="form-control" [(ngModel)]="user.cin" name="cin" required placeholder="Ex: 01234567">
+                        <label class="form-label small fw-bold text-dark">N° CIN <span
+                                class="text-muted small fs-7 fw-normal">(8 chiffres)</span></label>
+                        <input type="text" class="form-control" [(ngModel)]="user.cin" name="cin" maxlength="8"
+                            minlength="8" pattern="\d{8}" placeholder="Ex: 01234567">
                     </div>
                 </div>
 
                 <!-- Password -->
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">Mot de passe</label>
-                    <input type="password" class="form-control" [(ngModel)]="user.password" name="password" required placeholder="••••••••">
+                    <label class="form-label small fw-bold text-dark">Mot de passe <span
+                            class="text-danger">*</span></label>
+                    <input type="password" class="form-control" [(ngModel)]="user.password" name="password" required
+                        minlength="8" placeholder="•••••••• (Min. 8 caractères)">
                 </div>
 
-                <!-- Region & Ville -->
-                <div class="row g-2 mb-4">
+                <!-- TRE specific fields -->
+                <div class="mb-4" *ngIf="user.isTRE">
+                    <label class="form-label small fw-bold">Pays de résidence</label>
+                    <select class="form-select" [(ngModel)]="user.paysResidence" name="paysResidence" required>
+                        <option value="" disabled selected>Choisir un pays</option>
+                        <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+                    </select>
+                </div>
+
+                <!-- Region & Ville (Only for non-TRE) -->
+                <div class="row g-2 mb-4" *ngIf="!user.isTRE">
                     <div class="col-md-4">
                         <label class="form-label small fw-bold">Région</label>
-                        <select class="form-select" [(ngModel)]="user.adresse.region" name="region" (change)="onRegionChange()" required>
+                        <select class="form-select" [(ngModel)]="user.adresse.region" name="region"
+                            (change)="onRegionChange()" required>
                             <option value="" disabled selected>Choisir</option>
-                            <option *ngFor="let gov of governorates" [value]="gov.governorate">{{ gov.governorate }}</option>
+                            <option *ngFor="let gov of governorates" [value]="gov.governorate">{{ gov.governorate }}
+                            </option>
                         </select>
                     </div>
                     <div class="col-md-5">
                         <label class="form-label small fw-bold">Ville</label>
-                        <select class="form-select" [(ngModel)]="user.adresse.ville" name="ville" required [disabled]="!user.adresse.region" (change)="onVilleChange()">
+                        <select class="form-select" [(ngModel)]="user.adresse.ville" name="ville" required
+                            [disabled]="!user.adresse.region" (change)="onVilleChange()">
                             <option value="" disabled selected>Choisir</option>
                             <option *ngFor="let del of delegations" [value]="del.name">{{ del.name }}</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Code P.</label>
-                        <input type="text" class="form-control" [(ngModel)]="user.adresse.codePostal" name="codePostal" required readonly>
+                        <input type="text" class="form-control" [(ngModel)]="user.adresse.codePostal" name="codePostal"
+                            required readonly>
                     </div>
                 </div>
 
-                <div *ngIf="error" class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger mb-3" role="alert">
+                <div *ngIf="error"
+                    class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-10 text-danger mb-3"
+                    role="alert">
                     {{ error }}
                 </div>
 
-                <button type="submit" class="btn-submit mb-4" [disabled]="isSubmitting">
-                    <span *ngIf="!isSubmitting">S'inscrire</span>
-                    <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+                <button type="submit" class="btn-submit mb-4">
+                    <span>S'inscrire</span>
                 </button>
-                
-                <div class="position-relative mb-4">
+
+                <div class="position-relative my-4">
                     <hr class="text-muted opacity-25">
-                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small fw-medium">OU AVEC</span>
+                    <span
+                        class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small fw-medium">OU</span>
                 </div>
 
-                <div class="row g-2">
-                    <div class="col-4">
-                        <button type="button" (click)="socialLogin('google')" class="btn btn-social w-100">
-                            <i class="bi bi-google text-danger"></i>
-                        </button>
-                    </div>
-                    <div class="col-4">
-                        <button type="button" (click)="socialLogin('facebook')" class="btn btn-social w-100">
-                            <i class="bi bi-facebook text-primary"></i>
-                        </button>
-                    </div>
-                    <div class="col-4">
-                        <button type="button" (click)="socialLogin('twitter')" class="btn btn-social w-100">
-                            <i class="bi bi-twitter-x text-dark"></i>
-                        </button>
-                    </div>
-                </div>
+                <button type="button" (click)="socialLogin('google')" class="btn-google-pro mb-4">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
+                    <span>Continuer avec Google</span>
+                </button>
 
                 <a routerLink="/login" class="login-link">
                     Déjà membre ? <span>Connectez-vous</span>

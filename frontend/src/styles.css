@@ -292,3 +292,182 @@ h6 {
 [data-theme="dark"] .list-group-item-action:hover {
     background-color: rgba(255, 255, 255, 0.05);
 }
+
+/* Global Print Styles - ULTIMATE CLEANUP */
+@media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
+    /* Base reset */
+    body {
+        background: white !important;
+        color: black !important;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Aggressive Hiding of ALL UI ELEMENTS (except containers holding the modal) */
+    app-sidebar, .sidebar, .navbar, .ms-auto,
+    .chatbot-container, app-chatbot, .chat-toggle-btn, .chatbot-bubble,
+    .header-section, .list-card,
+    .mshell-header, .mshell-footer, .mshell-close-btn, .mfooter-btn,
+    .mshell-section-title, .mcard, .description-block, .timeline-container,
+    .premium-card, .mshell-status-pill, .evidence-grid-pro, .mshell-icon-wrap,
+    .mshell-header-bg, .status-alert, .assignment-card-img-style,
+    .screen-only-content, .btn-affecter-now, .status-success-msg,
+    .row, .col-md-5, .col-md-8, .col-md-2, .mfooter-right-actions,
+    .qr-container, .motif-chip, .table-responsive {
+        display: none !important;
+    }
+    
+    /* Reset containers to be transparent/invisible but keep flow */
+    .modal-overlay, .modal-shell, .mshell-body {
+        position: static !important;
+        display: block !important;
+        visibility: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    /* Show ONLY the professional sheet */
+    .pro-sheet-container {
+        display: block !important;
+        visibility: visible !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        color: black !important;
+    }
+
+    .pro-sheet-container * {
+        visibility: visible !important;
+    }
+
+    /* --- NEW PROFESSIONAL DATASHEET DESIGN --- */
+    .sheet-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 3px solid black;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+    }
+
+    .sheet-logo { 
+        font-size: 40px !important; 
+        font-weight: 900 !important; 
+        margin: 0 !important; 
+        letter-spacing: -2px !important; 
+    }
+
+    .sheet-sub { 
+        font-size: 10px !important; 
+        font-weight: 800 !important; 
+        text-transform: uppercase; 
+        margin-top: 5px !important;
+    }
+
+    .sheet-doc-title {
+        font-size: 24px !important;
+        font-weight: 900 !important;
+        margin: 0 !important;
+        text-align: right;
+    }
+
+    .sheet-ref {
+        font-family: monospace;
+        font-size: 12px !important;
+        font-weight: 700;
+        text-align: right;
+        margin-top: 5px !important;
+    }
+
+    .sheet-section-h {
+        background: #000 !important;
+        color: #fff !important;
+        padding: 8px 15px !important;
+        font-size: 12px !important;
+        font-weight: 900 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 25px 0 15px 0 !important;
+    }
+
+    .sheet-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .sheet-info-card {
+        border: 1.5pt solid black !important;
+        padding: 15px !important;
+        height: 100% !important;
+    }
+
+    .sheet-row {
+        margin-bottom: 8px !important;
+        font-size: 11px !important;
+        display: flex;
+    }
+
+    .sheet-label {
+        font-weight: 800 !important;
+        width: 130px !important;
+        flex-shrink: 0;
+        color: #444 !important;
+        text-transform: uppercase;
+        font-size: 9px !important;
+    }
+
+    .sheet-val {
+        font-weight: 700 !important;
+    }
+
+    .sheet-description {
+        border: 1.5pt solid black !important;
+        padding: 20px !important;
+        font-size: 12px !important;
+        line-height: 1.6 !important;
+        min-height: 250px !important;
+        white-space: pre-wrap !important;
+        text-align: justify;
+    }
+
+    .sheet-footer-info {
+        margin-top: 50px !important;
+        border-top: 1px solid #ddd;
+        padding-top: 15px;
+        text-align: center;
+        font-size: 10px !important;
+    }
+
+    .sheet-cert {
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .sheet-print-meta {
+        color: #666;
+    }
+
+    /* Force B&W */
+    * {
+        filter: none !important;
+    }
+    
+    .pro-sheet-container {
+        filter: grayscale(100%);
+    }
+}
+

@@ -7,8 +7,8 @@ const Message = require('../models/Message');
 const adminAuth = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user || (user.role !== 'admin_regional' && user.role !== 'super_admin')) {
-            return res.status(403).json({ msg: 'Access denied. Regional or Super Admin only.' });
+        if (!user || (user.role !== 'admin_regional' && user.role !== 'super_admin' && user.role !== 'admin_tre')) {
+            return res.status(403).json({ msg: 'Access denied. Admin only.' });
         }
         next();
     } catch (err) {
@@ -23,10 +23,10 @@ router.get('/contacts', [auth, adminAuth], async (req, res) => {
         const currentUser = await User.findById(req.user.id);
         let query = {};
         
-        if (currentUser.role === 'admin_regional') {
+        if (currentUser.role === 'admin_regional' || currentUser.role === 'admin_tre') {
             query.role = 'super_admin';
         } else if (currentUser.role === 'super_admin') {
-            query.role = 'admin_regional';
+            query.role = { $in: ['admin_regional', 'admin_tre'] };
         } else {
             return res.status(403).json({ msg: 'Not authorized' });
         }

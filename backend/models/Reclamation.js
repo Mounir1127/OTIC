@@ -87,6 +87,9 @@ const ReclamationSchema = new mongoose.Schema({
     },
     treCategory: {
         type: String
+    },
+    qrCode: {
+        type: String // Base64 Data URL
     }
 });
 

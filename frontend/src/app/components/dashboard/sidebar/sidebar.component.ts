@@ -150,7 +150,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       if (user && user.role === 'consommateur_simple') {
         this.startNotificationPolling();
       }
-      if (user && (user.role === 'admin_regional' || user.role === 'super_admin')) {
+      if (user && (user.role === 'admin_regional' || user.role === 'admin_tre' || user.role === 'super_admin')) {
         this.startMessagePolling();
       }
 
@@ -230,6 +230,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
         { path: '/dashboard/thermal-baths', icon: 'bi-water', labelKey: 'thermal_baths', exact: true },
         { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
+      ],
+      admin_tre: [
+        { path: '/dashboard', icon: 'bi-grid-1x2-fill', labelKey: 'dashboard', exact: true },
+        { path: '/dashboard/admin/assign', icon: 'bi-share-fill', labelKey: 'assign_reclamations', exact: false },
+        { path: '/dashboard/admin/all-reclamations', icon: 'bi-list-ul', labelKey: 'all_reclamations', exact: false },
+        { path: '/dashboard/admin/consumers', icon: 'bi-people', labelKey: 'manage_consumers', exact: false },
+        { path: '/dashboard/admin/stats', icon: 'bi-graph-up-arrow', labelKey: 'statistics', exact: true },
+        { path: '/dashboard/admin/conventionnes', icon: 'bi-briefcase', labelKey: 'manage_conventionnes', exact: false },
+        { path: '/dashboard/admin/messages', icon: 'bi-chat-dots-fill', labelKey: 'Messagerie', exact: false },
+        { path: '/dashboard/mineral-waters', icon: 'bi-droplet-fill', labelKey: 'mineral_waters', exact: true },
+        { path: '/dashboard/thermal-baths', icon: 'bi-water', labelKey: 'thermal_baths', exact: true },
+        { path: '/dashboard/profile', icon: 'bi-person-circle', labelKey: 'profile', exact: false },
       ]
     };
 
@@ -241,6 +253,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     switch (this.user.role) {
       case 'super_admin': return 'Super Administration';
       case 'admin_regional': return 'Administration Régionale';
+      case 'admin_tre': return 'Administration Diaspora (TRE)';
       default: return 'Espace Consommateur';
     }
   }

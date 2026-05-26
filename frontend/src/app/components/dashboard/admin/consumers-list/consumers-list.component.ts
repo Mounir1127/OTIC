@@ -34,15 +34,21 @@ import { AdminService } from '../../../../services/admin.service';
                             </td>
                             <td>{{user.email}}</td>
                             <td>{{user.telephone}}</td>
-                            <td>{{user.adresse?.region}} / {{user.adresse?.ville}}</td>
+                             <td>
+                                <span class="badge bg-light text-dark border-light-subtle fw-medium px-3 py-1 rounded-pill">
+                                    <ng-container *ngIf="user.isTRE">
+                                        <i class="bi bi-globe me-1"></i> {{ user.paysResidence }}
+                                    </ng-container>
+                                    <ng-container *ngIf="!user.isTRE">
+                                        {{user.adresse?.region}} / {{user.adresse?.ville}}
+                                    </ng-container>
+                                </span>
+                            </td>
                         </tr>
                         <tr *ngIf="users.length === 0 && !loading">
-                            <td colspan="4" class="text-center py-4">Aucun consommateur trouvé</td>
-                        </tr>
-                        <tr *ngIf="loading && users.length === 0">
-                            <td colspan="4" class="text-center py-4">
-                                <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
-                                Chargement...
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-people opacity-25 d-block fs-1 mb-2"></i>
+                                Aucun consommateur répertorié.
                             </td>
                         </tr>
                     </tbody>

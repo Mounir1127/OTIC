@@ -18,6 +18,7 @@ export class AddAdminComponent implements OnInit {
         email: '',
         telephone: '',
         password: '',
+        role: 'admin_regional',
         adresse: {
             ville: '',
             region: '',
@@ -88,6 +89,7 @@ export class AddAdminComponent implements OnInit {
             email: '',
             telephone: '',
             password: '',
+            role: 'admin_regional',
             adresse: {
                 ville: '',
                 region: '',

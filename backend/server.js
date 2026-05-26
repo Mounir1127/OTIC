@@ -1,4 +1,6 @@
 require('dotenv').config({ path: __dirname + '/.env' });
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -75,6 +77,7 @@ app.use('/api/reclamations', require('./routes/reclamations'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/chatbot', require('./routes/chatbot'));
 
 const PORT = process.env.PORT || 5000;
 

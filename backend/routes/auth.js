@@ -25,7 +25,7 @@ const profileStorage = multer.diskStorage({
     }
 });
 
-const uploadProfile = multer({ 
+const uploadProfile = multer({
     storage: profileStorage,
     limits: { fileSize: 5000000 }, // 5MB limit
     fileFilter: function (req, file, cb) {
@@ -43,33 +43,63 @@ const uploadProfile = multer({
 // @desc    Register user
 // @access  Public
 router.post("/register", async (req, res) => {
-    const { nom, prenom, email, telephone, cin, password, adresse } = req.body;
+    const { nom, prenom, email, telephone, cin, password, adresse, isTRE, paysResidence } = req.body;
 
     try {
         // Log incoming registration data (without password)
         console.log('Registration attempt:', { nom, prenom, email, telephone, cin, adresse });
 
         // Validate required fields
-        if (!nom || !prenom || !email || !telephone || !cin || !password) {
+        if (!nom || !prenom || !email || !telephone || !password) {
             console.log('Missing required fields');
-            return res.status(400).json({ msg: "Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Téléphone, CIN, Mot de passe)" });
+            return res.status(400).json({ msg: "Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Téléphone, Mot de passe)" });
         }
 
-        // Validate adresse structure
-        if (!adresse || !adresse.ville || !adresse.region || !adresse.codePostal) {
+        // 📞 Tunisian Phone Validation
+        const cleanPhone = telephone.replace(/\s/g, '');
+        const phoneRegex = /^(?:\+216|00216)?([2579]\d{7})$/;
+        const match = cleanPhone.match(phoneRegex);
+
+        if (!match) {
+            return res.status(400).json({ msg: "Format de téléphone tunisien invalide (8 chiffres commençant par 2, 5, 7 ou 9 requis)" });
+        }
+
+        // Use normalized 8-digit phone
+        const validatedPhone = match[1];
+
+        // 🆔 CIN Validation
+        if (cin) {
+            const cinClean = cin.replace(/\s/g, '');
+            if (!/^\d{8}$/.test(cinClean)) {
+                return res.status(400).json({ msg: "Le numéro CIN doit comporter exactement 8 chiffres." });
+            }
+        }
+
+        // 🔑 Password Validation
+        if (password.length < 8) {
+            return res.status(400).json({ msg: "Le mot de passe doit comporter au moins 8 caractères." });
+        }
+
+        // Validate adresse structure if NOT TRE
+        if (!isTRE && (!adresse || (!adresse.ville && !adresse.region))) {
             console.log('Invalid address structure:', adresse);
-            return res.status(400).json({ msg: "Please provide complete address information (ville, region, codePostal)" });
+            return res.status(400).json({ msg: "Veuillez fournir une adresse (ville et région)" });
+        }
+
+        // Validate paysResidence if TRE
+        if (isTRE && !paysResidence) {
+            return res.status(400).json({ msg: "Veuillez fournir votre pays de résidence" });
         }
 
         // Check email OR cin uniqueness - CASE INSENSITIVE for email
         const normalizedEmail = email.trim().toLowerCase();
-        let user = await User.findOne({ 
+        let user = await User.findOne({
             $or: [
-                { email: { $regex: new RegExp("^" + normalizedEmail + "$", "i") } }, 
+                { email: { $regex: new RegExp("^" + normalizedEmail + "$", "i") } },
                 ...(cin ? [{ cin }] : [])
-            ] 
+            ]
         });
-        
+
         if (user) {
             if (user.email.toLowerCase() === normalizedEmail) return res.status(400).json({ msg: "Cet email est déjà utilisé." });
             if (cin && user.cin === cin) return res.status(400).json({ msg: "Ce numéro CIN est déjà utilisé." });
@@ -79,14 +109,16 @@ router.post("/register", async (req, res) => {
             nom,
             prenom,
             email: normalizedEmail,
-            telephone,
+            telephone: validatedPhone,
             cin: cin || undefined,
             password,
-            adresse: {
+            isTRE: !!isTRE,
+            paysResidence: isTRE ? paysResidence : undefined,
+            adresse: !isTRE ? {
                 ville: adresse.ville,
                 region: adresse.region,
                 codePostal: adresse.codePostal
-            },
+            } : undefined,
             role: "consommateur_simple",
             photoProfil: null
         });
@@ -164,13 +196,13 @@ router.post("/login", async (req, res) => {
     try {
         // Check if identifier matches email (case-insensitive), telephone, or CIN
         console.log('Login Attempt for identifier:', identifierTrimmed);
-        
+
         const emailRegex = new RegExp("^" + identifierTrimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + "$", "i");
-        
+
         let user = await User.findOne({
             $or: [
-                { email: emailRegex }, 
-                { telephone: identifierTrimmed }, 
+                { email: emailRegex },
+                { telephone: identifierTrimmed },
                 { cin: identifierTrimmed }
             ]
         });
@@ -178,6 +210,12 @@ router.post("/login", async (req, res) => {
         if (!user) {
             console.log('User not found for identifier:', identifierTrimmed);
             return res.status(400).json({ msg: "Identifiants invalides (Email, téléphone ou CIN non trouvé)" });
+        }
+
+        // Check if account is active
+        if (user.isActive === false) {
+            console.log('Login attempt for disabled account:', user.email);
+            return res.status(403).json({ msg: "Votre compte a été désactivé par l'administrateur. Veuillez contacter le support." });
         }
 
         const isMatch = await bcrypt.compare(passwordOriginal, user.password);
@@ -302,12 +340,12 @@ router.post("/forgot-password", async (req, res) => {
             console.log(`[ForgotPass] No user found for: ${email}`);
             return res.status(404).json({ msg: "Aucun utilisateur trouvé avec cet email" });
         }
-        
+
         console.log(`[ForgotPass] Generating code for: ${user.email}`);
 
         // Generate 6 digit random code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        
+
         user.resetPasswordCode = code;
         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
@@ -315,7 +353,7 @@ router.post("/forgot-password", async (req, res) => {
 
         // Send reset link email
         const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:4300'}/reset-password?email=${user.email}&token=${code}`;
-        
+
         await sendResetLinkEmail(user.email, resetLink);
 
         res.json({ msg: "Lien de réinitialisation envoyé par email" });
@@ -331,7 +369,7 @@ router.post("/forgot-password", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
     const { email, code, newPassword } = req.body;
     try {
-        const user = await User.findOne({ 
+        const user = await User.findOne({
             email: { $regex: new RegExp("^" + email.trim() + "$", "i") },
             resetPasswordCode: code,
             resetPasswordExpires: { $gt: Date.now() }
@@ -371,13 +409,14 @@ router.post("/upload-photo", [require("../middleware/auth"), uploadProfile.singl
         if (!user) return res.status(404).json({ msg: "Utilisateur non trouvé" });
 
         // Update photo field - we'll store the URL path
-        // Important: Using internal URL that front-end can resolve
-        user.photoProfil = `http://localhost:5000/uploads/profile-pictures/${req.file.filename}`;
+        // Important: Using dynamic URL that front-end can resolve (works for localhost, local network, and cloud deployment)
+        const host = req.get('host');
+        user.photoProfil = `${req.protocol}://${host}/uploads/profile-pictures/${req.file.filename}`;
         await user.save();
 
         console.log(`[UploadPhoto] User ${user.email} updated profile picture: ${user.photoProfil}`);
 
-        res.json({ 
+        res.json({
             msg: "Photo de profil mise à jour",
             photoProfil: user.photoProfil
         });

@@ -51,13 +51,13 @@ export class AdminService {
     createAdmin(adminData: any): Observable<any> {
         return this.http.post(`${this.apiUrl}/create-admin`, adminData, { headers: this.getHeaders() });
     }
-    
+
     createConventionne(userData: any): Observable<any> {
         // Now include region for the new field
-        const payload = { 
-            nom: userData.nom, 
+        const payload = {
+            nom: userData.nom,
             email: userData.email,
-            region: userData.region 
+            region: userData.region
         };
         return this.http.post(`${this.apiUrl}/create-conventionne`, payload, { headers: this.getHeaders() });
     }
@@ -72,6 +72,10 @@ export class AdminService {
 
     updateUserRole(id: string, role: string): Observable<any> {
         return this.http.put(`${this.apiUrl}/user/${id}/role`, { role }, { headers: this.getHeaders() });
+    }
+
+    toggleUserStatus(id: string): Observable<any> {
+        return this.http.put(`${this.apiUrl}/user/${id}/toggle-status`, {}, { headers: this.getHeaders() });
     }
 
     getUserById(id: string): Observable<any> {
@@ -126,6 +130,12 @@ export class AdminService {
 
     deleteThermalBath(id: string): Observable<any> {
         return this.http.delete(`${this.apiUrl}/thermal-bath/${id}`, { headers: this.getHeaders() });
+    }
+
+    uploadThermalBathImage(file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('image', file);
+        return this.http.post(`${this.apiUrl}/thermal-baths/upload-image`, formData, { headers: this.getHeaders() });
     }
 
     triggerRefresh() {

@@ -1,109 +1,168 @@
 <div class="tre-wrapper" [class.rtl]="currentLang === 'ar'">
-    <!-- Header/Navbar for this section -->
+    <!-- Professional Navbar -->
     <nav class="navbar navbar-expand-lg tre-navbar fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" routerLink="/">
-                <img src="logo.png" alt="OTIC Logo" width="40" height="40" class="me-2 bg-white rounded-circle p-1">
-                <span class="fs-5 text-white">OTIC° <small class="opacity-75">Abroad</small></span>
+                <img src="logo.png" alt="OTIC Logo" width="35" height="35" class="me-2 bg-white rounded-circle p-1">
+                <span class="fs-5 text-white fw-bold">OTIC° <small
+                        class="opacity-50 fw-light">International</small></span>
             </a>
             <div class="ms-auto d-flex align-items-center">
-                <button (click)="switchLang()" class="btn btn-lang ms-3 shadow-sm">
-                    <i class="bi bi-translate me-2"></i> {{ t.langSwitch }}
+                <button (click)="switchLang()" class="btn btn-lang shadow-sm">
+                    <i class="bi bi-translate me-2"></i> {{ currentLang === 'fr' ? 'العربية' : 'Français' }}
                 </button>
-                <a routerLink="/login" class="btn btn-outline-light ms-3 d-none d-md-inline-block">{{ t.ctaLogin }}</a>
+                <a routerLink="/login"
+                    class="btn btn-outline-light ms-3 d-none d-md-inline-block px-4 rounded-pill small fw-bold">{{
+                    t.ctaLogin }}</a>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Premium Hero Section -->
     <header class="tre-hero">
-        <div class="container text-center">
-            <h1 class="display-3 fw-bold mb-4 animate-fade-in">{{ t.title }}</h1>
-            <p class="lead mb-5 animate-fade-in-delay text-white-50">{{ t.subtitle }}</p>
-            <div class="hero-stats d-flex justify-content-center gap-4 flex-wrap">
-                <div class="stat-item glass-card p-3 rounded-4">
-                    <span class="d-block h3 mb-0 fw-bold">24/7</span>
-                    <small class="opacity-75">Support</small>
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 text-center text-lg-start animate-up">
+                    <div class="glass-badge mb-4">{{ currentLang === 'fr' ? 'Espace Dédié TRE' : 'فضاء التونسيين
+                        بالخارج' }}</div>
+                    <h1 class="display-3 fw-bold mb-4">{{ t.heroTitle }}</h1>
+                    <p class="lead mb-5 text-white-50 lh-lg">{{ t.heroSubtitle }}</p>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                        <a routerLink="/register" class="btn btn-primary btn-lg px-5 rounded-pill shadow-lg fw-bold">{{
+                            t.ctaRegister }}</a>
+                        <a href="#services" class="btn btn-outline-light btn-lg px-5 rounded-pill fw-bold">{{
+                            currentLang === 'fr' ? 'En savoir plus' : 'اكتشف المزيد' }}</a>
+                    </div>
                 </div>
-                <div class="stat-item glass-card p-3 rounded-4">
-                    <span class="d-block h3 mb-0 fw-bold">100%</span>
-                    <small class="opacity-75">Gratuit</small>
-                </div>
-                <div class="stat-item glass-card p-3 rounded-4">
-                    <span class="d-block h3 mb-0 fw-bold">+5k</span>
-                    <small class="opacity-75">TRE Actifs</small>
+                <div class="col-lg-6 d-none d-lg-block">
+                    <div class="hero-visual position-relative">
+                        <img src="tunisian_abroad_premium_1778857370595.png" class="img-fluid hero-main-img"
+                            alt="OTIC International Support">
+                        <!-- Floating Logo Overlay -->
+                        <div class="position-absolute top-0 start-0 m-4 p-2 bg-white rounded-circle shadow-lg"
+                            style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; transform: translate(-20%, -20%);">
+                            <img src="logo.png" alt="OTIC Logo" class="img-fluid p-1">
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="wave-container">
-            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 70C840 80 960 100 1080 110C1200 120 1320 120 1380 120L1440 120V0H1380C1320 0 1200 0 1080 0C960 0 840 0 720 0C600 0 480 0 360 0C240 0 120 0 60 0H0V120Z" fill="white"/>
-            </svg>
         </div>
     </header>
 
-    <!-- Reclamation Categories -->
-    <section class="py-5 bg-white">
-        <div class="container text-center">
-            <div class="section-header mb-5">
-                <h2 class="fw-bold mb-3">{{ t.categoriesTitle }}</h2>
-                <p class="text-muted">{{ t.categoriesSubtitle }}</p>
+    <!-- Services Grid -->
+    <section id="services" class="py-5 bg-white">
+        <div class="container py-5">
+            <div class="text-center mb-5 animate-up">
+                <h2 class="fw-bold display-5 mb-3">{{ t.categoriesTitle }}</h2>
+                <p class="text-muted lead max-w-2xl mx-auto">{{ t.categoriesSubtitle }}</p>
             </div>
-            <div class="row g-4 justify-content-center">
+            <div class="row g-4">
                 <div class="col-md-4" *ngFor="let cat of t.categories; let i = index">
-                    <div class="category-card p-4 rounded-4 shadow-sm h-100 border transition-all hover-up" [style.animationDelay]="(i * 0.1) + 's'">
-                        <div class="icon-circle mb-4 mx-auto bg-primary bg-opacity-10 text-primary">
-                            <i class="bi {{ cat.icon }} fs-2"></i>
+                    <div class="category-card animate-up" [style.animationDelay]="(i * 0.1) + 's'">
+                        <div class="icon-wrap">
+                            <i class="bi {{ cat.icon }}"></i>
                         </div>
                         <h4 class="fw-bold mb-3">{{ cat.title }}</h4>
-                        <p class="text-muted small mb-4">{{ cat.desc }}</p>
-                        <a [routerLink]="['/dashboard/reclamation/new']" [queryParams]="{ tre: true, cat: cat.id }" class="btn btn-sm btn-primary rounded-pill px-4">{{ t.ctaLogin }}</a>
+                        <p class="text-muted small mb-4 lh-base">{{ cat.desc }}</p>
+                        <div class="d-flex align-items-center justify-content-end mt-auto pt-3 border-top">
+                            <a [routerLink]="['/dashboard/reclamation/new']" [queryParams]="{ tre: true, cat: cat.id }"
+                                class="btn btn-link p-0 text-decoration-none fw-bold">
+                                {{ currentLang === 'fr' ? 'Démarrer' : 'ابدأ الآن' }} <i
+                                    class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section with Image -->
+    <section class="py-5 bg-light">
+        <div class="container py-5">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 order-2 order-lg-1">
+                    <img src="tunisian_abroad.png" class="img-fluid rounded-5 shadow-lg" alt="Global Support">
+                </div>
+                <div class="col-lg-6 order-1 order-lg-2 animate-up">
+                    <h2 class="fw-bold mb-4">{{ currentLang === 'fr' ? 'Une protection sans frontières' : 'حماية بلا
+                        حدود' }}</h2>
+                    <ul class="list-unstyled">
+                        <li class="mb-4 d-flex align-items-start">
+                            <i class="bi bi-check-circle-fill text-success fs-4 me-3 mt-1"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ currentLang === 'fr' ? 'Assistance 24/7' : 'مساعدة 24/7' }}
+                                </h6>
+                                <p class="text-muted small mb-0">{{ currentLang === 'fr' ? 'Nos experts sont à votre
+                                    écoute, peu importe votre fuseau horaire.' : 'خبراؤنا في خدمتكم بغض النظر عن فارق
+                                    التوقيت.' }}</p>
+                            </div>
+                        </li>
+                        <li class="mb-4 d-flex align-items-start">
+                            <i class="bi bi-check-circle-fill text-success fs-4 me-3 mt-1"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ currentLang === 'fr' ? 'Suivi en Temps Réel' : 'متابعة
+                                    حينية' }}</h6>
+                                <p class="text-muted small mb-0">{{ currentLang === 'fr' ? 'Consultez l\'avancement de
+                                    votre dossier depuis votre espace personnel.' : 'تابع تقدم ملفك من فضائك الشخصي.' }}
+                                </p>
+                            </div>
+                        </li>
+                        <li class="mb-4 d-flex align-items-start">
+                            <i class="bi bi-check-circle-fill text-success fs-4 me-3 mt-1"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ currentLang === 'fr' ? 'Conformité Légale' : 'مطابقة
+                                    قانونية' }}</h6>
+                                <p class="text-muted small mb-0">{{ currentLang === 'fr' ? 'Toutes les démarches sont
+                                    certifiées conformes à la réglementation tunisienne.' : 'جميع الإجراءات معتمدة
+                                    ومطابقة للقوانين التونسية.' }}</p>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- FAQ Section -->
-    <section class="py-5 bg-light pb-5">
+    <section class="faq-section">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-5 mb-5 mb-lg-0 text-center text-lg-start">
-                    <h2 class="fw-bold display-5 mb-4">{{ t.faqTitle }}</h2>
-                    <p class="text-muted mb-5 lead">{{ t.faqSubtitle }}</p>
-                    <img src="logo.png" class="img-fluid opacity-25 w-50 d-none d-lg-block mx-lg-0" alt="OTIC Logo decoration">
-                </div>
-                <div class="col-lg-7">
-                    <div class="accordion accordion-flush rounded-4 shadow-sm overflow-hidden" id="faqAbroad">
-                        <div class="accordion-item border-bottom" *ngFor="let faq of t.faqs; let i = index">
-                            <h2 class="accordion-header" [id]="'heading'+i">
-                                <button class="accordion-button collapsed fw-bold py-4 text-dark" type="button" data-bs-toggle="collapse" [attr.data-bs-target]="'#collapse'+i">
-                                    {{ faq.q }}
-                                </button>
-                            </h2>
-                            <div [id]="'collapse'+i" class="accordion-collapse collapse" [attr.data-bs-parent]="'#faqAbroad'">
-                                <div class="accordion-body text-secondary lh-lg py-4">
-                                    {{ faq.a }}
-                                </div>
+            <div class="text-center mb-5 animate-up">
+                <h2 class="fw-bold mb-3">{{ t.faqTitle }}</h2>
+                <p class="text-muted">{{ t.faqSubtitle }}</p>
+            </div>
+            <div class="max-w-3xl mx-auto">
+                <div class="accordion accordion-flush" id="faqAbroad">
+                    <div class="accordion-item" *ngFor="let faq of t.faqs; let i = index">
+                        <h2 class="accordion-header" [id]="'heading'+i">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                [attr.data-bs-target]="'#collapse'+i">
+                                {{ faq.q }}
+                            </button>
+                        </h2>
+                        <div [id]="'collapse'+i" class="accordion-collapse collapse"
+                            [attr.data-bs-parent]="'#faqAbroad'">
+                            <div class="accordion-body text-secondary lh-lg">
+                                {{ faq.a }}
                             </div>
                         </div>
-                    </div>
-                    <div class="mt-4 text-center">
-                        <p class="text-muted small">Vous ne trouvez pas votre réponse ? <a href="#" class="text-primary fw-bold">Contactez-nous directement</a></p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer for this section -->
-    <footer class="py-5 bg-dark text-white text-center">
-        <div class="container">
+    <!-- Professional Footer -->
+    <footer class="tre-footer">
+        <div class="container text-center">
             <div class="mb-4">
-                <img src="logo.png" alt="OTIC Logo" width="50" class="bg-white rounded-circle p-1 mb-3">
-                <h5>OTIC° International</h5>
+                <img src="logo.png" alt="OTIC Logo" width="50" class="bg-white rounded-circle p-1 mb-3 footer-logo">
+                <h5 class="text-white fw-bold">OTIC° International</h5>
+                <p class="small opacity-50">{{ currentLang === 'fr' ? 'Agir pour la protection du citoyen tunisien, où
+                    qu\'il soit.' : 'العمل من أجل حماية المواطن التونسي أينما كان.' }}</p>
             </div>
-            <p class="small opacity-50 mb-0">© 2026 OTIC Tunisia. Tous droits réservés.</p>
+            <hr class="border-secondary opacity-10 my-4">
+            <p class="small opacity-30 mb-0">© 2026 OTIC Tunisia. All Rights Reserved.</p>
         </div>
     </footer>
 </div>

@@ -44,6 +44,7 @@ export const routes: Routes = [
             { path: 'profile', component: ProfileComponent },
             { path: 'reclamation', component: ReclamationListComponent },
             { path: 'reclamation/new', component: AddReclamationComponent },
+            { path: 'reclamation/:id', component: ReclamationListComponent },
             { path: 'admin-management', component: AdminManagementComponent },
             { path: 'admin-management/add', component: AddAdminComponent },
             { path: 'admin-management/security', component: SecuritySettingsComponent },

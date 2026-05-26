@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../../services/admin.service';
+import { AuthService } from '../../../../services/auth.service';
 import { Api } from '../../../../services/api';
 
 @Component({
@@ -10,19 +11,25 @@ import { Api } from '../../../../services/api';
     imports: [CommonModule, RouterModule],
     template: `
     <div class="admin-pro-container fade-in">
-        <!-- Premium Regional Header -->
-        <div class="regional-header mb-5 p-5 rounded-4 shadow-sm position-relative overflow-hidden">
+        <!-- Premium Regional/TRE Header -->
+        <div class="regional-header mb-5 p-5 rounded-4 shadow-sm position-relative overflow-hidden"
+             [ngClass]="{'tre-bg': user?.role === 'admin_tre'}">
             <div class="header-overlay"></div>
             <div class="position-relative z-1 d-flex align-items-center justify-content-between">
                 <div>
                     <div class="badge-regional mb-3 animate-slide-in">
-                        <i class="bi bi-geo-alt-fill me-2"></i> ADMINISTRATION RÉGIONALE
+                        <i class="bi" [ngClass]="user?.role === 'admin_tre' ? 'bi-globe' : 'bi-geo-alt-fill'"></i> 
+                        {{ user?.role === 'admin_tre' ? 'ADMINISTRATION DIASPORA (TRE)' : 'ADMINISTRATION RÉGIONALE' }}
                     </div>
-                    <h1 class="display-5 fw-bold text-white mb-2">Tableau de Bord de Proximité</h1>
-                    <p class="text-white opacity-75 mb-0 fs-5">Coordination des réclamations et suivi des consommateurs de votre région.</p>
+                    <h1 class="display-5 fw-bold text-white mb-2">
+                        {{ user?.role === 'admin_tre' ? "Gestion des Tunisiens à l'Étranger" : "Tableau de Bord de Proximité" }}
+                    </h1>
+                    <p class="text-white opacity-75 mb-0 fs-5">
+                        {{ user?.role === 'admin_tre' ? "Supervision des réclamations et suivi de la diaspora tunisienne." : "Coordination des réclamations et suivi des consommateurs de votre région." }}
+                    </p>
                 </div>
                 <div class="header-icon d-none d-lg-block opacity-25">
-                    <i class="bi bi-person-workspace" style="font-size: 8rem; color: white;"></i>
+                    <i class="bi" [ngClass]="user?.role === 'admin_tre' ? 'bi-globe-central-south_asia' : 'bi-person-workspace'" style="font-size: 8rem; color: white;"></i>
                 </div>
             </div>
         </div>
@@ -110,7 +117,7 @@ import { Api } from '../../../../services/api';
                                     </div>
                                     <div>
                                         <h6 class="mb-0 fw-bold">{{user.prenom}} {{user.nom}}</h6>
-                                        <small class="text-muted opacity-75">Client Régional</small>
+                                        <small class="text-muted opacity-75">{{ user.isTRE ? 'Client Diaspora' : 'Client Régional' }}</small>
                                     </div>
                                 </div>
                             </td>
@@ -120,7 +127,12 @@ import { Api } from '../../../../services/api';
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border-light-subtle fw-medium px-3 py-2 rounded-pill">
-                                    {{user.adresse?.region}} / {{user.adresse?.ville}}
+                                    <ng-container *ngIf="user.isTRE">
+                                        <i class="bi bi-globe me-1"></i> {{ user.paysResidence }}
+                                    </ng-container>
+                                    <ng-container *ngIf="!user.isTRE">
+                                        {{user.adresse?.region}} / {{user.adresse?.ville}}
+                                    </ng-container>
                                 </span>
                             </td>
                             <td class="text-end pe-4">
@@ -131,8 +143,8 @@ import { Api } from '../../../../services/api';
                         </tr>
                         <tr *ngIf="consumers.length === 0">
                             <td colspan="4" class="text-center py-5 text-muted">
-                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                                Synchronisation des données régionales...
+                                <i class="bi bi-person-badge opacity-25 d-block fs-1 mb-2"></i>
+                                Aucun consommateur à afficher pour le moment.
                             </td>
                         </tr>
                     </tbody>
@@ -148,6 +160,9 @@ import { Api } from '../../../../services/api';
         .regional-header {
             background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 70%, #60a5fa 100%);
             min-height: 240px;
+        }
+        .regional-header.tre-bg {
+            background: linear-gradient(135deg, #064e3b 0%, #059669 70%, #34d399 100%);
         }
         .header-overlay {
             position: absolute;
@@ -235,6 +250,7 @@ import { Api } from '../../../../services/api';
     `]
 })
 export class AdminHomeComponent implements OnInit {
+    user: any = null;
     consumers: any[] = [];
     stats = {
         consumers: 0,
@@ -244,11 +260,16 @@ export class AdminHomeComponent implements OnInit {
 
     constructor(
         private adminService: AdminService,
+        private authService: AuthService,
         private api: Api,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
+        this.authService.currentUser$.subscribe(u => {
+            this.user = u;
+            this.cdr.detectChanges();
+        });
         this.loadCaches();
         this.loadData();
     }

@@ -11,6 +11,38 @@ const WaterBrand = require('../models/WaterBrand');
 const ThermalBath = require('../models/ThermalBath');
 const { sendAssignmentEmail, sendWelcomeEmail } = require('../utils/emailService');
 const { generateReclamationPDF } = require('../utils/pdfGenerator');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Set up Multer for thermal bath photos
+const bathUploadDir = path.join(__dirname, '../uploads/baths');
+if (!fs.existsSync(bathUploadDir)) {
+    fs.mkdirSync(bathUploadDir, { recursive: true });
+}
+
+const bathStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, bathUploadDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, `bath-${Date.now()}${path.extname(file.originalname)}`);
+    }
+});
+
+const uploadBath = multer({
+    storage: bathStorage,
+    limits: { fileSize: 10000000 }, // 10MB limit
+    fileFilter: function (req, file, cb) {
+        const filetypes = /jpeg|jpg|png|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error("Error: File upload only supports images!"));
+    }
+});
 
 // Helper to log admin actions
 const logAdminAction = (msg) => {
@@ -47,11 +79,11 @@ const adminAuth = async (req, res, next) => {
         }
 
         console.log(`[AdminAuth] User found: ${user.email}, Role: ${user.role}`);
-        if (user.role !== 'super_admin' && user.role !== 'admin_regional') {
+        if (user.role !== 'super_admin' && user.role !== 'admin_regional' && user.role !== 'admin_tre') {
             console.warn(`[AdminAuth] Access denied for role: ${user.role}`);
             return res.status(403).json({ msg: 'Access denied. Admin only.' });
         }
-        
+
         next();
     } catch (err) {
         console.error('AdminAuth Error Details:', err);
@@ -89,6 +121,8 @@ router.get('/consumers', [auth, adminAuth], async (req, res) => {
             } else {
                 return res.json([]); // Si l'admin n'a pas de région assignée
             }
+        } else if (user.role === 'admin_tre') {
+            query.isTRE = true;
         }
 
         const users = await User.find(query).select('-password');
@@ -104,11 +138,21 @@ router.get('/consumers', [auth, adminAuth], async (req, res) => {
 // @access  Private (Admin/Super Admin)
 router.get('/conventionnes', [auth, adminAuth], async (req, res) => {
     try {
-        console.log(`[GET Conventionnes] Fetching all for role: ${req.user.role}`);
-        
-        // As requested: both super_admin AND regional_admin can see ALL partners in the collection
-        const conventionnes = await Conventionne.find({}).sort({ dateCreation: -1 });
-        
+        const user = await User.findById(req.user.id);
+        let query = {};
+
+        if (user.role === 'admin_regional') {
+            const adminRegion = user.adresse?.ville;
+            if (adminRegion) {
+                query.region = { $regex: new RegExp(`^${adminRegion.trim()}$`, 'i') };
+            } else {
+                return res.json([]);
+            }
+        } else if (user.role === 'admin_tre') {
+            query.isTRE = true;
+        }
+
+        const conventionnes = await Conventionne.find(query).sort({ dateCreation: -1 });
         res.json(conventionnes);
     } catch (err) {
         logAdminAction(`GET Conventionnes Error: ${err.message}`);
@@ -131,6 +175,8 @@ router.get('/reclamations/pending', [auth, adminAuth], async (req, res) => {
             } else {
                 return res.json([]);
             }
+        } else if (user.role === 'admin_tre') {
+            query.isTRE = true;
         }
 
         const reclamations = await Reclamation.find(query).populate('user', 'nom prenom email');
@@ -155,6 +201,8 @@ router.get('/reclamations/complements', [auth, adminAuth], async (req, res) => {
             } else {
                 return res.json([]);
             }
+        } else if (user.role === 'admin_tre') {
+            query.isTRE = true;
         }
 
         const reclamations = await Reclamation.find(query).populate('user', 'nom prenom email');
@@ -185,6 +233,9 @@ router.get('/reclamations/all', [auth, adminAuth], async (req, res) => {
                 console.log('⚠️ Regional Admin has no region (ville) assigned!');
                 return res.json([]);
             }
+        } else if (user.role === 'admin_tre') {
+            query.isTRE = true;
+            console.log('📍 Filtering by TRE: true');
         }
 
         const reclamations = await Reclamation.find(query)
@@ -204,13 +255,22 @@ router.get('/reclamations/all', [auth, adminAuth], async (req, res) => {
 // @access  Private (Admin/Admin Regional/Super Admin)
 router.put('/reclamation/:id/mark-read', [auth, adminAuth], async (req, res) => {
     try {
-        let reclamation = await Reclamation.findById(req.params.id);
+        const reclamation = await Reclamation.findById(req.params.id);
         if (!reclamation) return res.status(404).json({ msg: 'Reclamation not found' });
 
-        const wasUnread = !reclamation.lu;
-        // Only mark as read — do NOT change statut automatically
-        reclamation.lu = true;
+        const adminUser = await User.findById(req.user.id);
+        if (adminUser.role === 'admin_regional') {
+            const adminRegion = adminUser.adresse?.ville;
+            if (!reclamation.gouvernorat || reclamation.gouvernorat.toLowerCase() !== adminRegion?.toLowerCase()) {
+                return res.status(403).json({ msg: 'Accès refusé : Cette réclamation appartient à une autre région.' });
+            }
+        } else if (adminUser.role === 'admin_tre') {
+            if (!reclamation.isTRE) {
+                return res.status(403).json({ msg: 'Accès refusé : Cette réclamation ne concerne pas la diaspora.' });
+            }
+        }
 
+        reclamation.lu = true;
         await reclamation.save();
         res.json(reclamation);
     } catch (err) {
@@ -229,6 +289,18 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
         let reclamation = await Reclamation.findById(req.params.id);
 
         if (!reclamation) return res.status(404).json({ msg: 'Reclamation not found' });
+
+        const adminUser = await User.findById(req.user.id);
+        if (adminUser.role === 'admin_regional') {
+            const adminRegion = adminUser.adresse?.ville;
+            if (!reclamation.gouvernorat || reclamation.gouvernorat.toLowerCase() !== adminRegion?.toLowerCase()) {
+                return res.status(403).json({ msg: 'Accès refusé : Cette réclamation appartient à une autre région.' });
+            }
+        } else if (adminUser.role === 'admin_tre') {
+            if (!reclamation.isTRE) {
+                return res.status(403).json({ msg: 'Accès refusé : Cette réclamation ne concerne pas la diaspora.' });
+            }
+        }
 
         const partner = await Conventionne.findById(conventionneId).select('nom email');
         if (!partner) return res.status(404).json({ msg: 'Partenaire conventionné introuvable' });
@@ -252,7 +324,7 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
             try {
                 // Generate PDF Buffer
                 const pdfBuffer = await generateReclamationPDF(reclamation);
-                
+
                 // Send Email with attachment
                 sendAssignmentEmail(emailTo, reclamation, partner, pdfBuffer).catch(emailErr => {
                     console.error('[AssignEmail] Background sending failed:', emailErr.message);
@@ -278,7 +350,7 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
 // @desc    Create an admin user
 // @access  Private (Super Admin)
 router.post('/create-admin', [auth, superAdminAuth], async (req, res) => {
-    const { nom, prenom, email, telephone, password, adresse } = req.body;
+    const { nom, prenom, email, telephone, password, role, adresse } = req.body;
 
     try {
         let user = await User.findOne({ email });
@@ -292,7 +364,7 @@ router.post('/create-admin', [auth, superAdminAuth], async (req, res) => {
             email,
             telephone,
             password,
-            role: 'admin_regional',
+            role: role || 'admin_regional',
             adresse
         });
 
@@ -325,23 +397,24 @@ router.post('/create-conventionne', [auth, adminAuth], async (req, res) => {
 
     try {
         console.log(`[Partner Creation] Attempting for ${email} in region ${region}`);
-        
+
         let existing = await Conventionne.findOne({ email: email.trim().toLowerCase() });
         if (existing) {
             return res.status(400).json({ msg: 'Un partenaire existe déjà avec cet email' });
         }
 
         const creator = await User.findById(req.user.id);
-        
+
         const newPartner = new Conventionne({
             nom,
             email: email.trim().toLowerCase(),
             region: region || (creator.role === 'admin_regional' ? creator.adresse?.ville : null),
+            isTRE: creator.role === 'admin_tre',
             createdBy: req.user.id
         });
 
         await newPartner.save();
-        
+
         console.log(`[Partner Creation] Success for ${email}`);
         res.json({ msg: 'Partenaire créé avec succès', partner: newPartner });
     } catch (err) {
@@ -385,6 +458,41 @@ router.delete('/user/:id', [auth, superAdminAuth], async (req, res) => {
         if (err.kind === 'ObjectId') {
             return res.status(404).json({ msg: 'User not found' });
         }
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   PUT api/admin/user/:id/toggle-status
+// @desc    Activate or deactivate user account
+// @access  Private (Admin/Super Admin)
+router.put('/user/:id/toggle-status', [auth, adminAuth], async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Prevent deactivating yourself
+        if (user._id.toString() === req.user.id) {
+            return res.status(400).json({ msg: 'You cannot deactivate your own account' });
+        }
+
+        // Only Super Admin can deactivate other Admins
+        const requester = await User.findById(req.user.id);
+        const isAdminRole = (role) => ['super_admin', 'admin_regional', 'admin_tre'].includes(role);
+
+        if (isAdminRole(user.role) && requester.role !== 'super_admin') {
+            return res.status(403).json({ msg: 'Only Super Admin can deactivate other administrative accounts' });
+        }
+
+        user.isActive = !user.isActive;
+        await user.save();
+
+        logAdminAction(`${user.isActive ? 'ACTIVATED' : 'DEACTIVATED'} account for ${user.email} by ${requester.email}`);
+
+        res.json({ msg: `Account ${user.isActive ? 'activated' : 'deactivated'} successfully`, isActive: user.isActive });
+    } catch (err) {
+        console.error('Toggle Status Error:', err.message);
         res.status(500).send('Server error');
     }
 });
@@ -442,7 +550,7 @@ router.put('/user/:id/role', [auth, superAdminAuth], async (req, res) => {
         const { role } = req.body;
 
         // Validate role
-        const validRoles = ['super_admin', 'admin_regional', 'consommateur_simple', 'conventionne'];
+        const validRoles = ['super_admin', 'admin_regional', 'admin_tre', 'consommateur_simple', 'conventionne'];
         if (!validRoles.includes(role)) {
             return res.status(400).json({ msg: 'Invalid role' });
         }
@@ -479,6 +587,18 @@ router.put('/reclamation/:id/status', [auth, adminAuth], async (req, res) => {
 
         const reclamation = await Reclamation.findById(req.params.id);
         if (!reclamation) return res.status(404).json({ msg: 'Réclamation non trouvée.' });
+
+        const adminUser = await User.findById(req.user.id);
+        if (adminUser.role === 'admin_regional') {
+            const adminRegion = adminUser.adresse?.ville;
+            if (!reclamation.gouvernorat || reclamation.gouvernorat.toLowerCase() !== adminRegion?.toLowerCase()) {
+                return res.status(403).json({ msg: 'Accès refusé : Cette réclamation appartient à une autre région.' });
+            }
+        } else if (adminUser.role === 'admin_tre') {
+            if (!reclamation.isTRE) {
+                return res.status(403).json({ msg: 'Accès refusé : Cette réclamation ne concerne pas la diaspora.' });
+            }
+        }
 
         const oldStatut = reclamation.statut;
         reclamation.statut = statut;
@@ -553,6 +673,8 @@ router.get('/stats', [auth, adminAuth], async (req, res) => {
                     totalCount: 0
                 });
             }
+        } else if (user.role === 'admin_tre') {
+            query.isTRE = true;
         }
 
         // 2. Applied Filters
@@ -714,14 +836,14 @@ router.delete('/water-brand/:id', [auth, superAdminAuth], async (req, res) => {
 // @desc    Add a new thermal bath
 // @access  Private (Super Admin)
 router.post('/thermal-baths', [auth, superAdminAuth], async (req, res) => {
-    const { name, location, temperature, indications, description, type } = req.body;
+    const { name, location, temperature, indications, description, type, trustScore, rating, imageUrl } = req.body;
     try {
         let bath = await ThermalBath.findOne({ name });
         if (bath) {
             return res.status(400).json({ msg: 'Cette station existe déjà' });
         }
 
-        bath = new ThermalBath({ name, location, temperature, indications, description, type });
+        bath = new ThermalBath({ name, location, temperature, indications, description, type, trustScore, rating, imageUrl });
         await bath.save();
         res.json(bath);
     } catch (err) {
@@ -734,7 +856,7 @@ router.post('/thermal-baths', [auth, superAdminAuth], async (req, res) => {
 // @desc    Update a thermal bath
 // @access  Private (Super Admin)
 router.put('/thermal-bath/:id', [auth, superAdminAuth], async (req, res) => {
-    const { name, location, temperature, indications, description, type } = req.body;
+    const { name, location, temperature, indications, description, type, trustScore, rating, imageUrl } = req.body;
     try {
         let bath = await ThermalBath.findById(req.params.id);
         if (!bath) return res.status(404).json({ msg: 'Station non trouvée' });
@@ -745,6 +867,9 @@ router.put('/thermal-bath/:id', [auth, superAdminAuth], async (req, res) => {
         if (indications) bath.indications = indications;
         if (description) bath.description = description;
         if (type) bath.type = type;
+        if (trustScore !== undefined) bath.trustScore = trustScore;
+        if (rating !== undefined) bath.rating = rating;
+        if (imageUrl !== undefined) bath.imageUrl = imageUrl;
 
         await bath.save();
         res.json(bath);
@@ -767,6 +892,24 @@ router.delete('/thermal-bath/:id', [auth, superAdminAuth], async (req, res) => {
     } catch (err) {
         console.error('DELETE ThermalBath Error:', err.message);
         res.status(500).send('Server error');
+    }
+});
+
+// @route   POST api/admin/thermal-baths/upload-image
+// @desc    Upload thermal bath image
+// @access  Private (Super Admin)
+router.post('/thermal-baths/upload-image', [auth, superAdminAuth, uploadBath.single('image')], async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ msg: "Veuillez sélectionner une image" });
+        }
+        // Generate the URL dynamically based on current protocol and host (works for localhost, local network IPs, and production deployment)
+        const host = req.get('host');
+        const imageUrl = `${req.protocol}://${host}/uploads/baths/${req.file.filename}`;
+        res.json({ imageUrl });
+    } catch (err) {
+        console.error('Image Upload Error:', err.message);
+        res.status(500).json({ msg: "Erreur lors du téléchargement de l'image" });
     }
 });
 

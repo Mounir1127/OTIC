@@ -35,9 +35,9 @@ export class EditUserComponent implements OnInit {
             telephone: ['', Validators.required],
             role: ['', Validators.required],
             adresse: this.fb.group({
-                region: ['', Validators.required],
-                ville: ['', Validators.required],
-                codePostal: ['', Validators.required]
+                region: [''],
+                ville: [''],
+                codePostal: ['']
             })
         });
     }

@@ -151,28 +151,47 @@ import { Subscription, forkJoin } from 'rxjs';
                       <label for="phoneInput">Téléphone</label>
                     </div>
                   </div>
-                  <div class="col-12">
-                     <hr class="text-muted opacity-25 my-2">
-                     <h6 class="fw-bold mb-3 d-flex align-items-center"><i class="bi bi-geo-alt me-2"></i>Adresse</h6>
-                  </div>
-                  <div class="col-md-4">
-                    <div class="form-floating">
-                      <input type="text" class="form-control rounded-3" id="regionInput" [(ngModel)]="editUser.adresse.region" name="region" placeholder="Région">
-                      <label for="regionInput">Région (Gouvernorat)</label>
+                  <!-- Address Fields (only for non-TRE) -->
+                  <ng-container *ngIf="!editUser.isTRE">
+                    <div class="col-12">
+                       <hr class="text-muted opacity-25 my-2">
+                       <h6 class="fw-bold mb-3 d-flex align-items-center"><i class="bi bi-geo-alt me-2"></i>Adresse en Tunisie</h6>
                     </div>
-                  </div>
-                  <div class="col-md-4">
-                    <div class="form-floating">
-                      <input type="text" class="form-control rounded-3" id="cityInput" [(ngModel)]="editUser.adresse.ville" name="ville" placeholder="Ville">
-                      <label for="cityInput">Ville (Délégation)</label>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control rounded-3" id="regionInput" [(ngModel)]="editUser.adresse.region" name="region" placeholder="Région">
+                        <label for="regionInput">Région (Gouvernorat)</label>
+                      </div>
                     </div>
-                  </div>
-                  <div class="col-md-4">
-                    <div class="form-floating">
-                      <input type="text" class="form-control rounded-3" id="zipInput" [(ngModel)]="editUser.adresse.codePostal" name="codePostal" placeholder="Code Postal">
-                      <label for="zipInput">Code Postal</label>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control rounded-3" id="cityInput" [(ngModel)]="editUser.adresse.ville" name="ville" placeholder="Ville">
+                        <label for="cityInput">Ville (Délégation)</label>
+                      </div>
                     </div>
-                  </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control rounded-3" id="zipInput" [(ngModel)]="editUser.adresse.codePostal" name="codePostal" placeholder="Code Postal">
+                        <label for="zipInput">Code Postal</label>
+                      </div>
+                    </div>
+                  </ng-container>
+
+                  <!-- Country Field (only for TRE) -->
+                  <ng-container *ngIf="editUser.isTRE">
+                    <div class="col-12">
+                       <hr class="text-muted opacity-25 my-2">
+                       <h6 class="fw-bold mb-3 d-flex align-items-center"><i class="bi bi-globe me-2"></i>Tunisien à l'étranger</h6>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <select class="form-select rounded-3 h-auto py-3" id="countryInput" [(ngModel)]="editUser.paysResidence" name="paysResidence">
+                          <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+                        </select>
+                        <label for="countryInput">Pays de résidence</label>
+                      </div>
+                    </div>
+                  </ng-container>
                   
                   <div class="col-12 mt-5 text-end">
                     <span class="me-3 text-success animate-fade" *ngIf="successMsg">{{ successMsg }}</span>
@@ -402,8 +421,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
     prenom: '',
     email: '',
     telephone: '',
+    isTRE: false,
+    paysResidence: '',
     adresse: { ville: '', region: '', codePostal: '' }
   };
+  countries: string[] = [
+    'France', 'Italie', 'Allemagne', 'Canada', 'USA', 'Émirats Arabes Unis', 
+    'Qatar', 'Arabie Saoudite', 'Belgique', 'Suisse', 'Royaume-Uni', 
+    'Espagne', 'Pays-Bas', 'Suède', 'Libye', 'Algérie', 'Maroc', 'Égypte',
+    'Turquie', 'Koweït', 'Oman', 'Autre'
+  ].sort();
   
   // Password data
   passwordData = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -484,6 +511,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       prenom: user.prenom || '',
       email: user.email || '',
       telephone: user.telephone || '',
+      isTRE: !!user.isTRE,
+      paysResidence: user.paysResidence || '',
       adresse: {
         ville: user.adresse?.ville || '',
         region: user.adresse?.region || '',
@@ -523,7 +552,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
       { label: 'Email', value: user.email },
       { label: 'Téléphone', value: user.telephone },
       { label: 'CIN', value: user.cin },
-      { label: 'Localisation', value: `${user.adresse?.ville || ''}, ${user.adresse?.region || ''}` }
+      { 
+        label: user.isTRE ? 'Pays de résidence' : 'Localisation', 
+        value: user.isTRE ? user.paysResidence : `${user.adresse?.ville || ''}, ${user.adresse?.region || ''}` 
+      },
+      { label: 'Type de compte', value: user.isTRE ? 'Tunisien à l\'étranger' : 'Résident en Tunisie' }
     ];
   }
 

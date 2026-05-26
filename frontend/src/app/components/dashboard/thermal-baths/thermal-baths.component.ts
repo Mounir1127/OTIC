@@ -98,27 +98,73 @@ Chart.register(...registerables);
               </div>
 
               <!-- Floating Insights Panel (Integrated from test map project) -->
+              <!-- Floating Insights Panel (Integrated from test map project) -->
               <div class="map-overlay-panel" *ngIf="selectedSpring">
-                <div class="panel-glass p-3 rounded-4 shadow-lg border border-white border-opacity-10">
-                  <button class="btn-close btn-close-white float-end" (click)="selectedSpring = null"></button>
-                  <div class="spring-img-container mb-3">
-                    <img [src]="selectedSpring.imageUrl || 'logo.png'" class="img-fluid rounded-3 shadow-sm">
+                <div class="panel-glass p-3 rounded-4 shadow-lg border border-white">
+                  <button class="btn-close float-end" (click)="selectedSpring = null" aria-label="Fermer"></button>
+                  
+                  <div class="spring-img-container mb-3 shadow-sm rounded-3 overflow-hidden">
+                    <img [src]="selectedSpring.imageUrl || 'logo.png'" class="img-fluid w-100 object-fit-cover" style="height: 160px;">
                   </div>
-                  <h6 class="text-warning fw-bold mb-1">♨️ {{ selectedSpring.name }}</h6>
-                  <p class="small text-white-50 mb-3">{{ selectedSpring.location }} ({{ selectedSpring.latitude }}, {{ selectedSpring.longitude }})</p>
+                  
+                  <h6 class="text-primary fw-bold mb-1 fs-5 d-flex align-items-center gap-2">
+                    <i class="bi bi-water"></i> {{ selectedSpring.name }}
+                  </h6>
+                  
+                  <p class="small text-muted mb-3 d-flex align-items-center gap-1">
+                    <i class="bi bi-geo-alt-fill text-danger"></i>
+                    {{ selectedSpring.location }} <span class="text-black-50">({{ selectedSpring.latitude }}, {{ selectedSpring.longitude }})</span>
+                  </p>
+                  
+                  <!-- Premium Badge & Evaluation in Panel -->
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span [class]="'otic-trust-badge otic-badge-shimmer ' + getBadgeClass(selectedSpring.trustScore)">
+                      <i class="bi me-1" [ngClass]="getBadgeIcon(selectedSpring.trustScore)"></i>
+                      {{ getBadgeLabel(selectedSpring.trustScore) }}
+                    </span>
+                    <span class="fw-bold text-dark small" style="opacity: 0.85;">{{ selectedSpring.trustScore || 85 }}%</span>
+                  </div>
+                  
+                  <div class="d-flex align-items-center text-warning mb-3" style="font-size: 0.85rem;">
+                    <i *ngFor="let star of getStarsArray(selectedSpring.rating)" [class]="'bi ' + star + ' me-1'"></i>
+                    <span class="text-muted ms-1 small">({{ selectedSpring.rating || 4.2 }}/5)</span>
+                  </div>
+
                   <div class="stat-row-mini mb-3">
-                    <div class="mini-stat">
-                        <span class="label">TEMP.</span>
-                        <span class="value">{{ selectedSpring.temperature }}°C</span>
+                    <div class="mini-stat shadow-sm border border-light" style="background: #f8fafc;">
+                      <span class="label" style="color: #64748b; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">Température</span>
+                      <span class="value text-primary font-monospace" style="color: #2563eb; font-weight: 700; font-size: 0.95rem;">{{ selectedSpring.temperature }}°C</span>
                     </div>
-                    <div class="mini-stat">
-                        <span class="label">TYPE</span>
-                        <span class="value">{{ selectedSpring.type }}</span>
+                    <div class="mini-stat shadow-sm border border-light" style="background: #f8fafc;">
+                      <span class="label" style="color: #64748b; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">Catégorie</span>
+                      <span class="value text-dark" style="color: #1e293b; font-weight: 700; font-size: 0.82rem; line-height: 1.2;">{{ selectedSpring.type }}</span>
                     </div>
                   </div>
-                  <p class="small text-light opacity-75 mb-3">{{ selectedSpring.description }}</p>
-                  <a [href]="'https://www.google.com/search?tbm=isch&q=' + encode(selectedSpring.name)" target="_blank" class="btn btn-sm btn-light w-100 rounded-pill fw-bold">
-                    Voir plus d'images
+                  
+                  <!-- Premium High-Readability Description Card -->
+                  <div class="spring-description-card mb-3 p-3 rounded-3 shadow-sm" style="background: rgba(15, 23, 42, 0.03); border-left: 4px solid #0284c7; border-top: 1px solid rgba(0,0,0,0.02); border-bottom: 1px solid rgba(0,0,0,0.02); border-right: 1px solid rgba(0,0,0,0.02);">
+                    <div class="d-flex align-items-center mb-2">
+                      <i class="bi bi-info-circle-fill text-sky-600 me-2" style="color: #0284c7;"></i>
+                      <span class="text-dark fw-bold small text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em; color: #1e293b;">Présentation générale</span>
+                    </div>
+                    <p class="m-0" style="font-size: 0.84rem; line-height: 1.6; text-align: justify; color: #475569; font-weight: 450;">
+                      {{ selectedSpring.description || 'Cette station thermale de grande envergure est dotée d\'eaux minérales chaudes de haute qualité curative.' }}
+                    </p>
+                  </div>
+
+                  <!-- Premium Indications Card -->
+                  <div *ngIf="selectedSpring.indications" class="spring-indications-card mb-3 p-3 rounded-3 shadow-sm" style="background: rgba(16, 185, 129, 0.03); border-left: 4px solid #10b981; border-top: 1px solid rgba(0,0,0,0.02); border-bottom: 1px solid rgba(0,0,0,0.02); border-right: 1px solid rgba(0,0,0,0.02);">
+                    <div class="d-flex align-items-center mb-2">
+                      <i class="bi bi-heart-pulse-fill text-emerald-600 me-2" style="color: #10b981;"></i>
+                      <span class="text-dark fw-bold small text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em; color: #1e293b;">Bienfaits & Indications</span>
+                    </div>
+                    <p class="m-0" style="font-size: 0.84rem; line-height: 1.6; text-align: justify; color: #475569; font-weight: 450;">
+                      {{ selectedSpring.indications }}
+                    </p>
+                  </div>
+
+                  <a [href]="'https://www.google.com/search?tbm=isch&q=' + encode(selectedSpring.name)" target="_blank" class="btn btn-sm btn-outline-primary w-100 rounded-pill fw-bold py-2 mt-2 shadow-sm">
+                    <i class="bi bi-images me-1"></i> Galerie photos complète
                   </a>
                 </div>
               </div>
@@ -175,6 +221,7 @@ Chart.register(...registerables);
                 <th class="ps-4 py-3">Station</th>
                 <th class="py-3">Localisation</th>
                 <th class="py-3">Type</th>
+                <th class="py-3">Certification Qualité</th>
                 <th class="py-3">Temp. (°C)</th>
                 <th class="py-3">Indications Thérapeutiques</th>
                 <th class="py-3 pe-4 text-end" *ngIf="isSuperAdmin">Actions</th>
@@ -192,6 +239,22 @@ Chart.register(...registerables);
                 </td>
                 <td><i class="bi bi-geo-alt text-danger me-1"></i> {{ bath.location }}</td>
                 <td><span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill">{{ bath.type }}</span></td>
+                <td>
+                  <!-- Interactive Quality Badge Column -->
+                  <div class="d-flex flex-column align-items-start">
+                    <div class="d-flex align-items-center mb-1">
+                      <span [class]="'otic-trust-badge otic-badge-shimmer ' + getBadgeClass(bath.trustScore)">
+                        <i class="bi me-1" [ngClass]="getBadgeIcon(bath.trustScore)"></i>
+                        {{ getBadgeLabel(bath.trustScore) }}
+                      </span>
+                      <span class="ms-2 fw-bold text-dark small" style="opacity: 0.8;">{{ bath.trustScore }}%</span>
+                    </div>
+                    <div class="d-flex align-items-center text-warning" style="font-size: 0.78rem;">
+                      <i *ngFor="let star of getStarsArray(bath.rating)" [class]="'bi ' + star + ' me-0.5'"></i>
+                      <span class="text-muted ms-1 small">({{ bath.rating || '4.0' }})</span>
+                    </div>
+                  </div>
+                </td>
                 <td><span class="badge bg-light text-dark border px-3 py-2 rounded-pill font-monospace fw-normal">{{ bath.temperature || 'N/A' }}</span></td>
                 <td><small class="text-muted">{{ bath.indications || '-' }}</small></td>
                 <td class="pe-4 text-end" *ngIf="isSuperAdmin">
@@ -206,7 +269,7 @@ Chart.register(...registerables);
                 </td>
               </tr>
               <tr *ngIf="filteredBaths.length === 0">
-                <td [attr.colspan]="isSuperAdmin ? 6 : 5" class="text-center py-5">
+                <td [attr.colspan]="isSuperAdmin ? 7 : 6" class="text-center py-5">
                   <div class="py-4">
                     <i class="bi bi-slash-circle fs-1 text-muted opacity-25 mb-3 d-block"></i>
                     <p class="text-muted">Aucune station ne correspond à votre recherche.</p>
@@ -268,6 +331,55 @@ Chart.register(...registerables);
                   <div class="col-12">
                     <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">INDICATIONS THÉRAPEUTIQUES</label>
                     <textarea class="form-control custom-input-group shadow-sm border-0 p-3" rows="2" name="indications" [(ngModel)]="bathModel.indications" placeholder="Rhumatologie, Dermatologie..."></textarea>
+                  </div>
+
+                  <!-- Seeding Trust Score and Star Rating inputs -->
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">INDICE DE CONFIANCE (%)</label>
+                    <div class="input-group custom-input-group shadow-sm">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-shield-check text-success"></i></span>
+                      <input type="number" class="form-control border-start-0 ps-0" name="trustScore" [(ngModel)]="bathModel.trustScore" min="0" max="100" placeholder="Ex: 92">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">ÉVALUATION CITOYENNE (1-5)</label>
+                    <div class="input-group custom-input-group shadow-sm">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-star-fill text-warning"></i></span>
+                      <input type="number" class="form-control border-start-0 ps-0" name="rating" [(ngModel)]="bathModel.rating" min="1" max="5" step="0.1" placeholder="Ex: 4.6">
+                    </div>
+                  </div>
+
+                  <!-- Image Selection / Upload -->
+                  <div class="col-12">
+                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">IMAGE DE LA STATION (GOOGLE / IMAGE LOCALE)</label>
+                    
+                    <!-- Search & Paste URL Method -->
+                    <div class="input-group custom-input-group shadow-sm mb-3">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-link-45deg text-info"></i></span>
+                      <input type="text" class="form-control border-start-0 ps-0" name="imageUrl" [(ngModel)]="bathModel.imageUrl" placeholder="Adresse URL de l'image (ou lien Google)...">
+                      <button class="btn btn-outline-secondary border-start-0 px-3 fw-bold" type="button" (click)="searchGoogleImages()" [disabled]="!bathModel.name" title="Rechercher sur Google Images" style="border: 1px solid #ced4da; background-color: #f8fafc; border-left: none !important;">
+                        <i class="bi bi-search text-primary me-1"></i> Rechercher
+                      </button>
+                    </div>
+                    
+                    <div class="text-center my-2 text-muted fw-semibold small">— OU IMPORTER DEPUIS VOTRE ORDINATEUR —</div>
+
+                    <!-- Local Upload Method -->
+                    <div class="d-flex align-items-center gap-3 p-3 rounded-3 bg-light border border-dashed border-2">
+                      <div class="upload-icon-box bg-white p-3 rounded-circle shadow-sm">
+                        <i class="bi bi-cloud-arrow-up text-primary fs-3"></i>
+                      </div>
+                      <div class="flex-grow-1">
+                        <input type="file" id="bathImageFile" class="d-none" (change)="onFileSelected($event)" accept="image/*">
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-bold" onclick="document.getElementById('bathImageFile').click()">
+                          Choisir un fichier image
+                        </button>
+                        <div class="text-muted small mt-1" style="font-size: 0.72rem;">Téléchargez l'image depuis Google sur votre PC, puis sélectionnez-la ici pour un affichage 100% garanti.</div>
+                      </div>
+                      <div *ngIf="bathModel.imageUrl" class="preview-box border rounded-3 overflow-hidden shadow-sm bg-white" style="width: 60px; height: 60px; flex-shrink: 0;">
+                        <img [src]="bathModel.imageUrl" class="w-100 h-100 object-fit-cover" alt="Aperçu">
+                      </div>
+                    </div>
                   </div>
 
                   <div class="col-12">
@@ -395,10 +507,49 @@ Chart.register(...registerables);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 100%;
+      width: 95%;
       max-width: 600px;
+      max-height: 90vh;
       z-index: 1060;
       animation: modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .custom-modal .modal-dialog {
+      margin: 0;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .custom-modal .modal-content {
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+
+    .custom-modal .modal-body {
+      overflow-y: auto;
+      max-height: calc(90vh - 160px); /* Leave room for header & footer */
+    }
+
+    /* Sleek custom scrollbar for modal body */
+    .custom-modal .modal-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-modal .modal-body::-webkit-scrollbar-track {
+      background: #f8fafc;
+    }
+    .custom-modal .modal-body::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    .custom-modal .modal-body::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
 
     .custom-input-group {
@@ -538,6 +689,9 @@ Chart.register(...registerables);
       width: 320px;
       z-index: 1000;
       animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 460px;
+      display: flex;
+      flex-direction: column;
     }
     .panel-glass {
       background: rgba(255, 255, 255, 0.9);
@@ -546,6 +700,27 @@ Chart.register(...registerables);
       border: 1px solid rgba(0, 0, 0, 0.05);
       box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
       color: #1e293b;
+      overflow-y: auto;
+      max-height: 460px;
+    }
+
+    /* Custom Premium Thin Scrollbar for Floating Details Panel */
+    .panel-glass::-webkit-scrollbar {
+      width: 6px;
+    }
+    .panel-glass::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .panel-glass::-webkit-scrollbar-thumb {
+      background: rgba(30, 41, 59, 0.15);
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background-clip: padding-box;
+    }
+    .panel-glass::-webkit-scrollbar-thumb:hover {
+      background: rgba(30, 41, 59, 0.3);
+      border: 1px solid transparent;
+      background-clip: padding-box;
     }
     .spring-img-container img {
       height: 150px;
@@ -610,6 +785,122 @@ Chart.register(...registerables);
       background: rgba(0,0,0,0.05);
       margin: 0 8px;
     }
+
+    /* === PREMIUM METALLIC BADGES === */
+    .otic-trust-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 50px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      color: #ffffff;
+      user-select: none;
+    }
+
+    .otic-badge-gold {
+      background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+      color: #5c3a00 !important;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 15px rgba(191, 149, 63, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    .otic-badge-silver {
+      background: linear-gradient(135deg, #d3d3d3 0%, #ffffff 25%, #a9a9a9 50%, #ffffff 75%, #808080 100%);
+      color: #2c3e50 !important;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 15px rgba(169, 169, 169, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    .otic-badge-bronze {
+      background: linear-gradient(135deg, #804a00 0%, #fca5a5 25%, #b45309 50%, #fef08a 75%, #78350f 100%);
+      color: #ffffff !important;
+      box-shadow: 0 4px 15px rgba(120, 53, 15, 0.25);
+    }
+
+    .otic-badge-none {
+      background: #e2e8f0;
+      color: #64748b !important;
+      border: 1px solid #cbd5e1;
+    }
+
+    .otic-badge-shimmer {
+      position: relative;
+      overflow: hidden;
+    }
+    .otic-badge-shimmer::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 30%;
+      height: 200%;
+      background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.7) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      transform: rotate(30deg);
+      animation: otic-badge-sweep 3.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes otic-badge-sweep {
+      0% { left: -60%; }
+      30% { left: 140%; }
+      100% { left: 140%; }
+    }
+
+    /* === LEAFLET DYNAMIC PULSATIONS === */
+    @keyframes gold-halo {
+      0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.8); }
+      70% { box-shadow: 0 0 0 12px rgba(251, 191, 36, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+    }
+
+    @keyframes silver-halo {
+      0% { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0.8); }
+      70% { box-shadow: 0 0 0 10px rgba(148, 163, 184, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0); }
+    }
+
+    @keyframes bronze-halo {
+      0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.6); }
+      70% { box-shadow: 0 0 0 8px rgba(217, 119, 6, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+    }
+
+    ::ng-deep .marker-pin-gold {
+      background: linear-gradient(135deg, #fbbf24, #d97706) !important;
+      border: 2px solid #fff5c5 !important;
+      animation: gold-halo 2.5s infinite !important;
+    }
+
+    ::ng-deep .marker-pin-silver {
+      background: linear-gradient(135deg, #cbd5e1, #64748b) !important;
+      border: 2px solid #f8fafc !important;
+      animation: silver-halo 3s infinite !important;
+    }
+
+    ::ng-deep .marker-pin-bronze {
+      background: linear-gradient(135deg, #f59e0b, #78350f) !important;
+      border: 2px solid #fef3c7 !important;
+      animation: bronze-halo 3s infinite !important;
+    }
+
+    ::ng-deep .marker-pulse-gold {
+      background: rgba(251, 191, 36, 0.3) !important;
+    }
+    ::ng-deep .marker-pulse-silver {
+      background: rgba(148, 163, 184, 0.3) !important;
+    }
+    ::ng-deep .marker-pulse-bronze {
+      background: rgba(217, 119, 6, 0.2) !important;
+    }
   `]
 })
 export class ThermalBathsComponent implements OnInit {
@@ -636,7 +927,10 @@ export class ThermalBathsComponent implements OnInit {
     temperature: '',
     indications: '',
     description: '',
-    type: 'Station Thermale'
+    type: 'Station Thermale',
+    trustScore: 85,
+    rating: 4.2,
+    imageUrl: ''
   };
 
   constructor(
@@ -646,6 +940,70 @@ export class ThermalBathsComponent implements OnInit {
     private adminService: AdminService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  searchGoogleImages() {
+    if (this.bathModel.name) {
+      const query = encodeURIComponent('Source thermale ' + this.bathModel.name + ' Tunisie');
+      window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
+    }
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.adminService.uploadThermalBathImage(file).subscribe({
+        next: (res) => {
+          this.bathModel.imageUrl = res.imageUrl;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          alert('Erreur lors du téléchargement de l\'image: ' + (err.error?.msg || err.message));
+        }
+      });
+    }
+  }
+
+  getBadgeClass(score: number): string {
+    const s = score || 0;
+    if (s >= 90) return 'otic-badge-gold';
+    if (s >= 75) return 'otic-badge-silver';
+    if (s >= 60) return 'otic-badge-bronze';
+    return 'otic-badge-none';
+  }
+
+  getBadgeIcon(score: number): string {
+    const s = score || 0;
+    if (s >= 90) return 'bi-patch-check-fill';
+    if (s >= 75) return 'bi-shield-check';
+    if (s >= 60) return 'bi-award';
+    return 'bi-x-circle';
+  }
+
+  getBadgeLabel(score: number): string {
+    const s = score || 0;
+    if (s >= 90) return 'Excellent (Or)';
+    if (s >= 75) return 'Qualité (Argent)';
+    if (s >= 60) return 'Standard (Bronze)';
+    return 'Non Certifié';
+  }
+
+  getStarsArray(rating: number): string[] {
+    const r = rating || 4.0;
+    const stars: string[] = [];
+    const fullStars = Math.floor(r);
+    const hasHalf = r % 1 >= 0.4;
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push('bi-star-fill');
+      } else if (i === fullStars && hasHalf) {
+        stars.push('bi-star-half');
+      } else {
+        stars.push('bi-star');
+      }
+    }
+    return stars;
+  }
 
   ngOnInit(): void {
     this.auth.currentUser$.subscribe(user => {
@@ -784,7 +1142,7 @@ export class ThermalBathsComponent implements OnInit {
   // --- CRUD ---
   openAddModal() {
     this.editingBathId = null;
-    this.bathModel = { name: '', location: '', temperature: '', indications: '', description: '', type: 'Station Thermale' };
+    this.bathModel = { name: '', location: '', temperature: '', indications: '', description: '', type: 'Station Thermale', trustScore: 85, rating: 4.2, imageUrl: '' };
     this.showModal = true;
   }
 
@@ -849,13 +1207,28 @@ export class ThermalBathsComponent implements OnInit {
     const markerGroup = L.featureGroup();
 
     // Custom Professional Marker Icon
-    const createCustomIcon = (name: string) => {
+    const createCustomIcon = (name: string, score: number) => {
+      let markerClass = 'marker-pin shadow-lg';
+      let pulseClass = 'marker-pulse';
+      
+      const s = score || 85;
+      if (s >= 90) {
+        markerClass += ' marker-pin-gold';
+        pulseClass += ' marker-pulse-gold';
+      } else if (s >= 75) {
+        markerClass += ' marker-pin-silver';
+        pulseClass += ' marker-pulse-silver';
+      } else if (s >= 60) {
+        markerClass += ' marker-pin-bronze';
+        pulseClass += ' marker-pulse-bronze';
+      }
+
       return L.divIcon({
         className: 'custom-pro-marker',
         html: `
           <div class="marker-pin-wrapper">
-            <div class="marker-pulse"></div>
-            <div class="marker-pin shadow-lg">
+            <div class="${pulseClass}"></div>
+            <div class="${markerClass}">
               <i class="bi bi-water"></i>
             </div>
             <div class="marker-label">${name}</div>
@@ -870,7 +1243,7 @@ export class ThermalBathsComponent implements OnInit {
     this.baths.forEach(spring => {
       if (spring.latitude && spring.longitude) {
         const marker = L.marker([spring.latitude, spring.longitude], {
-          icon: createCustomIcon(spring.name)
+          icon: createCustomIcon(spring.name, spring.trustScore)
         });
 
         marker.on('click', () => {
@@ -882,18 +1255,28 @@ export class ThermalBathsComponent implements OnInit {
           this.cdr.detectChanges();
         });
 
+        const badgeClass = this.getBadgeClass(spring.trustScore);
+        const badgeIcon = this.getBadgeIcon(spring.trustScore);
+        const badgeLabel = this.getBadgeLabel(spring.trustScore);
+
         marker.bindPopup(`
-          <div class="pro-popup-card">
-            <div class="pro-popup-img" style="background-image: url('${spring.imageUrl || 'logo.png'}')"></div>
-            <div class="pro-popup-header">
-                <span class="badge bg-warning text-dark mb-1">STATION THERMALE</span>
-                <h6 class="fw-bold m-0 text-white">${spring.name}</h6>
+          <div class="pro-popup-card" style="box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-radius: 12px; overflow: hidden;">
+            <div class="pro-popup-img" style="background-image: url('${spring.imageUrl || 'logo.png'}'); height: 130px; background-size: cover; background-position: center; border-bottom: 3px solid #0284c7;"></div>
+            <div class="pro-popup-header" style="background: linear-gradient(135deg, #1e293b, #0f172a); padding: 12px 15px;">
+                <div class="d-flex align-items-center mb-1">
+                  <span class="otic-trust-badge ${badgeClass}" style="padding: 2px 8px; font-size: 0.65rem; border-radius: 50px;">
+                    <i class="bi ${badgeIcon} me-1"></i> ${badgeLabel}
+                  </span>
+                </div>
+                <h6 class="fw-bold m-0 text-white" style="font-size: 0.95rem; letter-spacing: 0.02em;">♨️ ${spring.name}</h6>
             </div>
-            <div class="pro-popup-body">
-                <p class="small text-light-emphasis mb-2">${spring.description || 'Station thermale de renom'}</p>
-                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary border-opacity-25">
+            <div class="pro-popup-body" style="padding: 15px; background: #0f172a;">
+                <p style="color: #94a3b8; font-size: 0.82rem; line-height: 1.5; text-align: justify; margin-bottom: 12px;">
+                  ${spring.description || 'Cette station thermale de renom propose des soins thermaux exceptionnels basés sur des eaux minérales naturelles chaudes.'}
+                </p>
+                <div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.08);">
                     <span class="text-warning fw-bold small"><i class="bi bi-thermometer-half"></i> ${spring.temperature}°C</span>
-                    <span class="text-info small"><i class="bi bi-geo-alt-fill"></i> ${spring.location}</span>
+                    <span style="color: #38bdf8; font-size: 0.76rem;"><i class="bi bi-geo-alt-fill"></i> ${spring.location}</span>
                 </div>
             </div>
           </div>

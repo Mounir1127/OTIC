@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
 import { ReclamationService } from '../../../services/reclamation.service';
 import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamation-taxonomy';
 
@@ -57,13 +58,26 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                 </div>
                 <h2 class="fw-bold mb-3">Réclamation Enregistrée !</h2>
                 <p class="lead text-muted mb-4">Votre demande a été transmise avec succès.</p>
-                <div class="d-inline-block bg-light-subtle rounded-4 p-4 border border-dashed mb-4">
-                    <small class="text-uppercase text-muted fw-bold ls-1 d-block mb-2">Code de suivi</small>
-                    <span class="display-6 fw-bold text-dark user-select-all font-monospace">{{ successTrackingCode }}</span>
+                
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 mb-5">
+                    <!-- Tracking Code Box -->
+                    <div class="bg-light-subtle rounded-4 p-4 border border-dashed text-center shadow-sm" style="min-width: 280px;">
+                        <small class="text-uppercase text-muted fw-bold ls-1 d-block mb-2">Code de suivi</small>
+                        <span class="display-6 fw-bold text-dark user-select-all font-monospace">{{ successTrackingCode }}</span>
+                    </div>
+
+                    <!-- QR Code Box -->
+                    <div *ngIf="successQrCode" class="bg-white rounded-4 p-3 border shadow-sm text-center qr-box fade-in">
+                        <img [src]="successQrCode" alt="QR Code de suivi" class="img-fluid mb-2" style="width: 120px; height: 120px;">
+                        <small class="text-uppercase text-muted fw-bold d-block" style="font-size: 0.6rem; letter-spacing: 0.5px;">Scanner pour suivre</small>
+                    </div>
                 </div>
-                <p class="text-muted small mb-4">Veuillez conserver ce code pour suivre l'état de votre demande.</p>
-                <button class="btn btn-outline-primary px-4 py-2 rounded-pill fw-medium me-3" (click)="resetForm()">Nouvelle réclamation</button>
-                <button class="btn btn-primary px-4 py-2 rounded-pill fw-medium" routerLink="/dashboard/reclamation">Voir mes réclamations</button>
+
+                <p class="text-muted small mb-4">Veuillez conserver ce code ou scanner le QR code pour suivre l'état de votre demande.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-outline-primary px-4 py-2 rounded-pill fw-medium" (click)="resetForm()">Nouvelle réclamation</button>
+                    <button class="btn btn-primary px-4 py-2 rounded-pill fw-medium" routerLink="/dashboard/reclamation">Voir mes réclamations</button>
+                </div>
             </div>
 
             <!-- Form Wizard -->
@@ -156,7 +170,11 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
                         <label class="form-label">Secteur d'activité</label>
                         <select class="form-select form-select-lg" name="secteur" [(ngModel)]="reclamation.secteur" (change)="onSectorChange()" required>
                             <option value="" disabled selected>Sélectionnez un secteur...</option>
-                            <option *ngFor="let s of sectors" [value]="s.name">{{ s.name }}</option>
+                            <option *ngFor="let s of sectors" [value]="s.name" 
+                                    [style.color]="(s.name.includes('Tunisiens') && s.name.includes('Étranger')) ? '#10b981' : null" 
+                                    [style.fontWeight]="(s.name.includes('Tunisiens') && s.name.includes('Étranger')) ? 'bold' : 'normal'">
+                                {{ s.name }}
+                            </option>
                         </select>
                     </div>
 
@@ -346,6 +364,14 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
     [data-theme="dark"] .text-dark { color: #f1f5f9 !important; }
     [data-theme="dark"] .alert-light { background-color: rgba(255,255,255,0.03); border-color: transparent; color: #f1f5f9; }
     [data-theme="dark"] .upload-zone:hover { background-color: rgba(251, 191, 36, 0.05) !important; }
+    
+    .qr-box {
+        animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
+    }
   `]
 })
 export class AddReclamationComponent {
@@ -353,6 +379,7 @@ export class AddReclamationComponent {
     sectors = RECLAMATION_SECTORS;
     naturesList = RECLAMATION_NATURES;
     availableSubSectors: string[] = [];
+    isTREUser = false;
 
     reclamation = {
         complainantType: 'particulier',
@@ -369,10 +396,12 @@ export class AddReclamationComponent {
 
     loading = false;
     successTrackingCode = '';
+    successQrCode = '';
     errorMessage = '';
     selectedFiles: File[] = [];
 
     constructor(
+        private authService: AuthService,
         private reclamationService: ReclamationService,
         private ngZone: NgZone,
         private cdr: ChangeDetectorRef,
@@ -380,24 +409,45 @@ export class AddReclamationComponent {
     ) { }
 
     ngOnInit() {
+        this.authService.currentUser$.subscribe((user: any) => {
+            if (user && user.isTRE) {
+                this.isTREUser = true;
+                // Transform TRE categories into main sectors for TRE users
+                this.sectors = [
+                    { name: "Transferts d’argent", subSectors: ["Frais bancaires", "Délais de transfert", "Blocage de compte", "Autre"] },
+                    { name: "Bagages", subSectors: ["Perte de bagage", "Dommage/Casse", "Retard de livraison", "Autre"] },
+                    { name: "Services touristiques", subSectors: ["Hôtellerie", "Agences de voyage", "Transport touristique", "Autre"] },
+                    { name: "Fraude commerciale", subSectors: ["Pratiques trompeuses", "Prix abusifs", "Non-conformité", "Autre"] },
+                    { name: "Questions administratives", subSectors: ["Services consulaires", "Douanes", "Démarches administratives", "Autre"] }
+                ];
+            } else {
+                this.isTREUser = false;
+                this.sectors = RECLAMATION_SECTORS;
+            }
+            this.cdr.detectChanges();
+        });
+
         this.route.queryParams.subscribe(params => {
             if (params['tre']) {
-                this.reclamation.secteur = "Tunisiens à l'Étranger";
+                this.reclamation.secteur = this.isTREUser ? "Transferts d’argent" : "Tunisiens à l'Étranger";
                 this.onSectorChange();
                 if (params['cat']) {
                     const decodedCat = decodeURIComponent(params['cat']);
-                    // Map the simple ID to the actual subsector name
                     const mapping: any = {
-                        'transfers': 'Transferts d’argent',
-                        'luggage': 'Bagages',
-                        'tourism': 'Services touristiques (TRE)',
-                        'fraud': 'Fraude commerciale (International)',
-                        'admin': 'Questions administratives et consulaires'
+                        'transfers': this.isTREUser ? 'Transferts d’argent' : 'Transferts d’argent',
+                        'luggage': this.isTREUser ? 'Bagages' : 'Bagages',
+                        'tourism': this.isTREUser ? 'Services touristiques' : 'Services touristiques (TRE)',
+                        'fraud': this.isTREUser ? 'Fraude commerciale' : 'Fraude commerciale (International)',
+                        'admin': this.isTREUser ? 'Questions administratives' : 'Questions administratives et consulaires'
                     };
-                    if (mapping[decodedCat]) {
-                        this.reclamation.sous_secteur = mapping[decodedCat];
-                        this.step = 3; // Jump to details
+                    
+                    if (this.isTREUser) {
+                        this.reclamation.secteur = mapping[decodedCat] || this.reclamation.secteur;
+                        this.onSectorChange();
+                    } else {
+                        this.reclamation.sous_secteur = mapping[decodedCat] || '';
                     }
+                    this.step = 3;
                 }
             }
         });
@@ -455,6 +505,12 @@ export class AddReclamationComponent {
         this.errorMessage = '';
         console.log('🚀 PRO Submit attempt...');
 
+        // OPTIMISTIC UI: Show success screen immediately for a "sans chargement" feel
+        // We generate a temporary tracking code
+        const tempCode = `OTIC-${Math.floor(100000 + Math.random() * 900000)}`;
+        this.successTrackingCode = tempCode;
+        this.cdr.detectChanges();
+
         try {
             const formData = new FormData();
             formData.append('complainantType', this.reclamation.complainantType);
@@ -466,9 +522,9 @@ export class AddReclamationComponent {
             formData.append('description', this.reclamation.description);
             formData.append('operateur', this.reclamation.operateur);
 
-            if (this.reclamation.secteur === "Tunisiens à l'Étranger") {
+            if (this.reclamation.secteur === "Tunisiens à l'Étranger" || this.isTREUser) {
                 formData.append('isTRE', 'true');
-                formData.append('treCategory', this.reclamation.sous_secteur);
+                formData.append('treCategory', this.reclamation.secteur + (this.reclamation.sous_secteur ? ' - ' + this.reclamation.sous_secteur : ''));
             }
 
             if (this.reclamation.natures && this.reclamation.natures.length > 0) {
@@ -484,10 +540,14 @@ export class AddReclamationComponent {
             const res = await firstValueFrom(this.reclamationService.createReclamation(formData));
             console.log('✅ Response received:', res);
 
-            this.successTrackingCode = res.trackingCode || res._id || `REC-${Date.now().toString().slice(-4)}`;
+            // Replace temp code with real one if they differ (optional, keeping temp is usually fine for UI)
+            if (res.trackingCode) this.successTrackingCode = res.trackingCode;
+            if (res.qrCode) this.successQrCode = res.qrCode;
             this.cdr.detectChanges();
         } catch (err: any) {
             console.error('❌ Submission failed:', err);
+            // If it fails, we have to revert the success state
+            this.successTrackingCode = '';
             this.errorMessage = err.error?.msg || err.message || "Une erreur est survenue lors de l'envoi.";
             this.cdr.detectChanges();
         }
@@ -496,6 +556,7 @@ export class AddReclamationComponent {
     resetForm() {
         this.step = 1;
         this.successTrackingCode = '';
+        this.successQrCode = '';
         this.selectedFiles = [];
         this.reclamation = {
             complainantType: 'particulier',

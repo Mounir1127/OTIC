@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../services/admin.service';
@@ -7,6 +7,7 @@ import { Chart, registerables } from 'chart.js';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
+import * as L from 'leaflet';
 
 Chart.register(...registerables);
 
@@ -17,12 +18,43 @@ Chart.register(...registerables);
     templateUrl: './stats.component.html',
     styleUrls: ['./stats.component.css']
 })
-export class StatsComponent implements OnInit, AfterViewInit {
+export class StatsComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('categoryChart') categoryChartRef!: ElementRef;
     @ViewChild('statusChart') statusChartRef!: ElementRef;
     @ViewChild('processingChart') processingChartRef!: ElementRef;
     @ViewChild('dashboardContent') dashboardContent!: ElementRef;
     @ViewChild('exportSection') exportSection!: ElementRef;
+
+    map: any;
+    markers: any[] = [];
+
+    // Coordonnées géographiques approximatives du centre de chaque gouvernorat tunisien
+    governorateCoords: { [key: string]: { lat: number; lng: number } } = {
+        'Ariana': { lat: 36.8624, lng: 10.1955 },
+        'Béja': { lat: 36.7256, lng: 9.1817 },
+        'Ben Arous': { lat: 36.7531, lng: 10.2222 },
+        'Bizerte': { lat: 37.2744, lng: 9.8739 },
+        'Gabès': { lat: 33.8814, lng: 10.0982 },
+        'Gafsa': { lat: 34.4250, lng: 8.7842 },
+        'Jendouba': { lat: 36.5011, lng: 8.7802 },
+        'Kairouan': { lat: 35.6781, lng: 10.0963 },
+        'Kasserine': { lat: 35.1675, lng: 8.8308 },
+        'Kébili': { lat: 33.7043, lng: 8.9690 },
+        'Le Kef': { lat: 36.1822, lng: 8.7148 },
+        'Mahdia': { lat: 35.5039, lng: 11.0450 },
+        'Manouba': { lat: 36.8078, lng: 10.0863 },
+        'Médenine': { lat: 33.3549, lng: 10.4933 },
+        'Monastir': { lat: 35.7833, lng: 10.8333 },
+        'Nabeul': { lat: 36.4561, lng: 10.7376 },
+        'Sfax': { lat: 34.7400, lng: 10.7600 },
+        'Sidi Bouzid': { lat: 35.0382, lng: 9.4849 },
+        'Siliana': { lat: 36.0840, lng: 9.3708 },
+        'Sousse': { lat: 35.8256, lng: 10.6369 },
+        'Tataouine': { lat: 32.9297, lng: 10.4518 },
+        'Tozeur': { lat: 33.9197, lng: 8.1336 },
+        'Tunis': { lat: 36.8065, lng: 10.1815 },
+        'Zaghouan': { lat: 36.4029, lng: 10.1429 }
+    };
 
     stats: any = {
         volumeByCategory: [],
@@ -135,6 +167,12 @@ export class StatsComponent implements OnInit, AfterViewInit {
         this.createCategoryChart();
         this.createStatusChart();
         this.createProcessingChart();
+
+        // Initialisation et mise à jour de la cartographie
+        setTimeout(() => {
+            this.initMap();
+            this.updateMapMarkers();
+        }, 150);
     }
 
     destroyCharts(): void {
@@ -312,5 +350,175 @@ export class StatsComponent implements OnInit, AfterViewInit {
 
         // Write and Save
         XLSX.writeFile(wb, `Statistiques_OTIC_Complet_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    // ==========================================
+    // LEAFLET MAP LOGIC
+    // ==========================================
+    initMap(): void {
+        if (this.map) {
+            setTimeout(() => this.map.invalidateSize(), 50);
+            return;
+        }
+
+        const mapEl = document.getElementById('admin-geo-map');
+        if (!mapEl) {
+            console.warn('Map container element #admin-geo-map not found.');
+            return;
+        }
+
+        // Initialiser la carte sur la Tunisie
+        this.map = L.map('admin-geo-map', {
+            center: [34.0, 9.5],
+            zoom: 6.2,
+            zoomControl: true,
+            scrollWheelZoom: false,
+            attributionControl: true
+        });
+
+        // Fond de carte premium Voyager
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors © CARTO'
+        }).addTo(this.map);
+
+        setTimeout(() => this.map.invalidateSize(), 150);
+    }
+
+    updateMapMarkers(): void {
+        if (!this.map) return;
+
+        // Effacer les anciens marqueurs
+        this.markers.forEach(m => m.remove());
+        this.markers = [];
+
+        const reclamations = this.stats.reclamations || [];
+        if (reclamations.length === 0) return;
+
+        // Agréger les réclamations par gouvernorat
+        const govData: { [key: string]: { count: number; service: number; produit: number } } = {};
+
+        reclamations.forEach((r: any) => {
+            const govName = r.gouvernorat;
+            if (!govName) return;
+
+            const normalizedGovName = this.normalizeGovName(govName);
+            if (!this.governorateCoords[normalizedGovName]) return;
+
+            if (!govData[normalizedGovName]) {
+                govData[normalizedGovName] = { count: 0, service: 0, produit: 0 };
+            }
+
+            govData[normalizedGovName].count++;
+            if (r.type === 'Service') {
+                govData[normalizedGovName].service++;
+            } else if (r.type === 'Produit') {
+                govData[normalizedGovName].produit++;
+            }
+        });
+
+        // Dessiner les marqueurs de réclamations
+        Object.keys(govData).forEach(govName => {
+            const data = govData[govName];
+            const coords = this.governorateCoords[govName];
+
+            // Calculer la taille (rayon) proportionnelle
+            const radius = Math.min(25, Math.max(9, 9 + data.count * 0.8));
+
+            // Définir la couleur selon la gravité
+            let color = '#0ea5e9'; // Bleu cyan pour volume faible
+            let fillColor = '#38bdf8';
+            if (data.count > 8) {
+                color = '#ef4444'; // Rouge pour volume critique
+                fillColor = '#f87171';
+            } else if (data.count >= 3) {
+                color = '#f59e0b'; // Orange pour volume modéré
+                fillColor = '#fbbf24';
+            }
+
+            const circle = L.circleMarker([coords.lat, coords.lng], {
+                radius: radius,
+                fillColor: fillColor,
+                color: color,
+                weight: 2,
+                opacity: 0.9,
+                fillOpacity: 0.6
+            });
+
+            // Contenu du popup premium
+            const popupContent = `
+                <div class="map-popup-card">
+                    <div class="popup-title">Gouv. ${govName}</div>
+                    <div class="popup-stat-row">
+                        <span class="label">Réclamations</span>
+                        <span class="value badge-count" style="background-color: ${color}20; color: ${color}; border: 1px solid ${color}40;">
+                            ${data.count}
+                        </span>
+                    </div>
+                    <div class="popup-details">
+                        <div class="detail-item"><i class="bi bi-gear-wide-connected me-1"></i><strong>Services :</strong> ${data.service}</div>
+                        <div class="detail-item"><i class="bi bi-box-seam me-1"></i><strong>Produits :</strong> ${data.produit}</div>
+                    </div>
+                    <button class="btn-filter-map" onclick="window.angularStatsComponent.filterByRegion('${govName}')">
+                        <i class="bi bi-filter-circle-fill me-1"></i> Filtrer cette région
+                    </button>
+                </div>
+            `;
+
+            circle.bindPopup(popupContent, {
+                className: 'admin-leaflet-popup',
+                closeButton: false
+            });
+
+            // Effets de survol
+            circle.on('mouseover', (e: any) => {
+                e.target.setStyle({ fillOpacity: 0.85, weight: 3 });
+            });
+
+            circle.on('mouseout', (e: any) => {
+                e.target.setStyle({ fillOpacity: 0.6, weight: 2 });
+            });
+
+            circle.addTo(this.map);
+            this.markers.push(circle);
+        });
+
+        // Rendre disponible globalement pour le bouton "Filtrer" du popup Leaflet
+        (window as any).angularStatsComponent = this;
+    }
+
+    normalizeGovName(name: string): string {
+        if (!name) return '';
+        let n = name.trim();
+        n = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+        
+        if (n === 'Kef') return 'Le Kef';
+        if (n === 'Benarous') return 'Ben Arous';
+        if (n === 'Sidi bouzid') return 'Sidi Bouzid';
+        return n;
+    }
+
+    filterByRegion(regionName: string): void {
+        this.filters.region = regionName;
+        this.applyFilters();
+        if (this.map) {
+            const coords = this.governorateCoords[regionName];
+            if (coords) {
+                this.map.flyTo([coords.lat, coords.lng], 9, {
+                    duration: 1.2
+                });
+            }
+        }
+    }
+
+    ngOnDestroy(): void {
+        this.destroyCharts();
+        if (this.map) {
+            this.map.remove();
+            this.map = null;
+        }
+        if ((window as any).angularStatsComponent === this) {
+            delete (window as any).angularStatsComponent;
+        }
     }
 }

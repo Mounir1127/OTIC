@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../services/admin.service';
+import { AuthService } from '../../../../services/auth.service';
 import { LocationService } from '../../../../services/location.service';
 import { SettingsService } from '../../../../services/settings.service';
 
@@ -56,7 +57,7 @@ import { SettingsService } from '../../../../services/settings.service';
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-bank text-primary"></i></span>
                                 <input type="text" class="form-control border-start-0 ps-0 mshell-input" name="nom" 
-                                       [(ngModel)]="newConv.nom" required placeholder="Ex: المندوبية...">
+                                       [(ngModel)]="newConv.nom" required placeholder="Ex: MDE / Poste...">
                             </div>
                         </div>
                         <div class="mshell-form-group">
@@ -67,7 +68,7 @@ import { SettingsService } from '../../../../services/settings.service';
                                        [(ngModel)]="newConv.email" required placeholder="contact@otic.tn">
                             </div>
                         </div>
-                        <div class="mshell-form-group">
+                        <div class="mshell-form-group" *ngIf="userRole !== 'admin_tre'">
                             <label class="mshell-label mb-2">Gouvernorat (Région)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-geo-alt text-primary"></i></span>
@@ -76,6 +77,14 @@ import { SettingsService } from '../../../../services/settings.service';
                                     <option value="">Toute la Tunisie (Global)</option>
                                     <option *ngFor="let gov of governorates" [value]="gov.governorate">{{gov.governorate}}</option>
                                 </select>
+                            </div>
+                        </div>
+                        <!-- Diaspora Mode Indicator -->
+                        <div class="mshell-form-group" *ngIf="userRole === 'admin_tre'">
+                            <label class="mshell-label mb-2">Type de Partenaire</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-globe text-success"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0 mshell-input bg-light" value="Partenaire Diaspora (TRE)" readonly>
                             </div>
                         </div>
                     </div>
@@ -122,7 +131,10 @@ import { SettingsService } from '../../../../services/settings.service';
                                 <span class="mshell-email-pill"><i class="bi bi-envelope-fill me-1 small"></i>{{user.email}}</span>
                             </td>
                             <td class="text-center">
-                                <span class="badge border text-dark bg-light px-3 py-2 rounded-pill font-monospace small">
+                                <span *ngIf="user.isTRE" class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-2 rounded-pill small">
+                                    <i class="bi bi-globe me-1"></i> Diaspora (TRE)
+                                </span>
+                                <span *ngIf="!user.isTRE" class="badge border text-dark bg-light px-3 py-2 rounded-pill font-monospace small">
                                     {{ user.region || 'Toute la Tunisie' }}
                                 </span>
                             </td>
@@ -226,13 +238,19 @@ export class ConventionnesListComponent implements OnInit {
     successMsg = '';
     errorMsg = '';
 
+    userRole: string = '';
+
     constructor(
         private adminService: AdminService,
+        private authService: AuthService,
         private locationService: LocationService,
         public settings: SettingsService
     ) { }
 
     ngOnInit() {
+        this.authService.currentUser$.subscribe(u => {
+            this.userRole = u?.role || '';
+        });
         const cached = localStorage.getItem('otic_admin_conventionnes_list');
         if (cached) {
             try {
@@ -315,11 +333,22 @@ export class ConventionnesListComponent implements OnInit {
 
     deleteUser(id: string) {
         if (confirm('Êtes-vous sûr de vouloir supprimer ce partenaire ?')) {
+            // Optimistic UI: remove immediately
+            const originalList = [...this.conventionnes];
+            this.conventionnes = this.conventionnes.filter(p => p._id !== id);
+            localStorage.setItem('otic_admin_conventionnes_list', JSON.stringify(this.conventionnes));
+
             this.adminService.deletePartner(id).subscribe({
                 next: () => {
-                    this.loadData();
+                    // Success: list already updated
+                    console.log('Partner deleted successfully');
                 },
-                error: (err) => alert('Erreur lors de la suppression')
+                error: (err) => {
+                    // Revert on error
+                    this.conventionnes = originalList;
+                    localStorage.setItem('otic_admin_conventionnes_list', JSON.stringify(this.conventionnes));
+                    alert('Erreur lors de la suppression. Retour à l\'état précédent.');
+                }
             });
         }
     }

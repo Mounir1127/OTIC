@@ -58,6 +58,18 @@ const UserSchema = new mongoose.Schema({
     resetPasswordExpires: {
         type: Date,
         default: null
+    },
+    isTRE: {
+        type: Boolean,
+        default: false,
+    },
+    paysResidence: {
+        type: String,
+        required: false,
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     }
 });
 

@@ -23,4 +23,11 @@ export class ReclamationService {
 
         return this.http.post(this.apiUrl, reclamation, { headers });
     }
+
+    getReclamationById(id: string): Observable<any> {
+        const token = localStorage.getItem('token');
+        return this.http.get(`${this.apiUrl}/${id}`, {
+            headers: { 'x-auth-token': token || '' }
+        });
+    }
 }

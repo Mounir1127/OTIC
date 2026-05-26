@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../services/admin.service';
+import { AuthService } from '../../../../services/auth.service';
 import { PdfService } from '../../../../services/pdf.service';
+import { ChatbotService } from '../../../../services/chatbot.service';
 
 @Component({
     selector: 'app-all-reclamations',
@@ -12,7 +14,9 @@ import { PdfService } from '../../../../services/pdf.service';
     <div class="admin-container fade-in">
         <div class="header-section">
             <h2>Toutes les Réclamations</h2>
-            <p class="text-muted">Historique complet des réclamations de votre région</p>
+            <p class="text-muted">
+                {{ userRole === 'admin_tre' ? 'Historique complet des réclamations de la diaspora' : 'Historique complet des réclamations de votre région' }}
+            </p>
         </div>
 
         <div class="card list-card">
@@ -58,12 +62,10 @@ import { PdfService } from '../../../../services/pdf.service';
                                 <h6 class="fw-bold text-muted">Aucune réclamation trouvée</h6>
                             </td>
                         </tr>
-                        <tr *ngIf="loading && reclamations.length === 0">
+                        <tr *ngIf="reclamations.length === 0 && loading">
                             <td colspan="6" class="text-center py-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Chargement...</span>
-                                </div>
-                                <p class="small text-muted mt-2 mb-0">Chargement des réclamations...</p>
+                                <div class="opacity-50 mb-3"><i class="bi bi-search fs-1"></i></div>
+                                <h6 class="text-muted fw-light">Recherche des réclamations en cours...</h6>
                             </td>
                         </tr>
                     </tbody>
@@ -107,8 +109,76 @@ import { PdfService } from '../../../../services/pdf.service';
                 <!-- === BODY === -->
                 <div class="mshell-body" *ngIf="selectedReclamation" id="print-area">
 
-                    <!-- Section 1: User & Classification -->
-                    <div class="mshell-section-title"><i class="bi bi-person-vcard me-2"></i>Informations du Plaignant</div>
+                    <!-- Fiche Professionnelle Template (Visible only on Print) -->
+                    <div class="pro-sheet-container">
+                        <!-- Header Section -->
+                        <div class="sheet-header">
+                            <div class="sheet-branding">
+                                <h1 class="sheet-logo">OTIC</h1>
+                                <p class="sheet-sub">Office du Thermalisme et de l'Hydrothérapie</p>
+                            </div>
+                            <div class="sheet-title-box">
+                                <h2 class="sheet-doc-title">FICHE DE RÉCLAMATION</h2>
+                                <p class="sheet-ref">Référence : #{{selectedReclamation.trackingCode}}</p>
+                            </div>
+                        </div>
+
+                        <!-- Main Info Grid -->
+                        <div class="sheet-grid">
+                            <!-- Column 1: Identité -->
+                            <div class="sheet-col">
+                                <h3 class="sheet-section-h">1. IDENTITÉ DU PLAIGNANT</h3>
+                                <div class="sheet-info-card">
+                                    <div class="sheet-row"><span class="sheet-label">Nom & Prénom :</span> <span class="sheet-val">{{selectedReclamation.user?.prenom}} {{selectedReclamation.user?.nom}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Email :</span> <span class="sheet-val">{{selectedReclamation.user?.email}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Téléphone :</span> <span class="sheet-val">{{selectedReclamation.user?.telephone}}</span></div>
+                                    <div class="sheet-row" *ngIf="selectedReclamation.user?.adresse">
+                                        <span class="sheet-label">Adresse :</span> <span class="sheet-val">{{selectedReclamation.user?.adresse.ville}}, {{selectedReclamation.user?.adresse.region}} {{selectedReclamation.user?.adresse.codePostal}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Column 2: Détails -->
+                            <div class="sheet-col">
+                                <h3 class="sheet-section-h">2. DÉTAILS DU DOSSIER</h3>
+                                <div class="sheet-info-card">
+                                    <div class="sheet-row"><span class="sheet-label">Date de dépôt :</span> <span class="sheet-val">{{selectedReclamation.dateCreation | date:'dd MMMM yyyy, HH:mm'}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Statut actuel :</span> <span class="sheet-val status-text">{{getStatusLabel(selectedReclamation.statut)}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Catégorie :</span> <span class="sheet-val">{{selectedReclamation.type}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Secteur :</span> <span class="sheet-val">{{selectedReclamation.secteur}}</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Operator Info -->
+                        <div class="sheet-full-row">
+                            <h3 class="sheet-section-h">3. INCIDENT ET OPÉRATEUR CONCERNÉ</h3>
+                            <div class="sheet-info-card">
+                                <div class="sheet-row"><span class="sheet-label">Opérateur :</span> <span class="sheet-val highlight">{{selectedReclamation.operateur || 'Non spécifié'}}</span></div>
+                                <div class="sheet-row"><span class="sheet-label">Activité :</span> <span class="sheet-val">{{selectedReclamation.activite || 'Générale'}}</span></div>
+                                <div class="sheet-row" *ngIf="selectedReclamation.natures?.length">
+                                    <span class="sheet-label">Nature du grief :</span> <span class="sheet-val">{{selectedReclamation.natures.join(' — ')}}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description Section -->
+                        <div class="sheet-full-row mt-4">
+                            <h3 class="sheet-section-h">4. EXPOSÉ DES FAITS</h3>
+                            <div class="sheet-description">
+                                {{selectedReclamation.description || 'Aucune description détaillée fournie.'}}
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="sheet-footer-info">
+                            <div class="sheet-cert">Document certifié conforme par la plateforme centrale de l'OTIC</div>
+                            <div class="sheet-print-meta">Généré le {{ today | date:'dd/MM/yyyy HH:mm' }} — www.otic.tn</div>
+                        </div>
+                    </div>
+
+                    <!-- EVERYTHING BELOW IS SCREEN-ONLY IN CSS -->
+                    <div class="screen-only-content">
+                        <div class="mshell-section-title"><i class="bi bi-person-vcard me-2"></i>Informations du Plaignant</div>
                     <div class="mshell-grid-2 mb-4">
                         <div class="mcard">
                             <div class="mcard-icon-wrap blue"><i class="bi bi-person-fill"></i></div>
@@ -122,9 +192,14 @@ import { PdfService } from '../../../../services/pdf.service';
                                     <div class="mcard-meta-row" *ngIf="selectedReclamation.user?.telephone">
                                         <i class="bi bi-telephone"></i><span>{{selectedReclamation.user?.telephone}}</span>
                                     </div>
-                                    <div class="mcard-meta-row" *ngIf="selectedReclamation.user?.adresse?.ville">
-                                        <i class="bi bi-geo-alt"></i>
-                                        <span>{{selectedReclamation.user?.adresse?.ville}}, {{selectedReclamation.user?.adresse?.region}} — CP {{selectedReclamation.user?.adresse?.codePostal}}</span>
+                                    <div class="mcard-meta-row" *ngIf="selectedReclamation.user?.adresse?.ville || selectedReclamation.user?.paysResidence">
+                                        <i class="bi" [class.bi-geo-alt]="!selectedReclamation.user?.isTRE" [class.bi-globe]="selectedReclamation.user?.isTRE"></i>
+                                        <span *ngIf="selectedReclamation.user?.isTRE">
+                                            {{selectedReclamation.user?.paysResidence}}
+                                        </span>
+                                        <span *ngIf="!selectedReclamation.user?.isTRE">
+                                            {{selectedReclamation.user?.adresse?.ville}}, {{selectedReclamation.user?.adresse?.region}} — CP {{selectedReclamation.user?.adresse?.codePostal}}
+                                        </span>
                                     </div>
                                 </div>
                                 <!-- Professional info badge -->
@@ -214,12 +289,16 @@ import { PdfService } from '../../../../services/pdf.service';
                         </div>
                     </div>
 
-                    <!-- Section 6: Quick Status Update (Internal) -->
-                    <div class="mshell-section-title"><i class="bi bi-gear-fill me-2"></i>Mettre à jour le dossier</div>
-                    <div class="card premium-card p-3 mb-4">
+                    <!-- Section 6: Quick Status Update (Internal) with AI Copilot -->
+                    <div class="mshell-section-title">
+                        <i class="bi bi-gear-fill me-2"></i>Mettre à jour le dossier
+                    </div>
+                    <div class="card premium-card p-4 mb-4 status-update-card">
                         <div class="row g-3">
-                            <div class="col-md-5">
-                                <select class="form-select status-select" [(ngModel)]="selectedStatus">
+                            <!-- Dropdown column -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-muted small mb-2">Statut du Dossier</label>
+                                <select class="form-select status-select-new" [(ngModel)]="selectedStatus">
                                     <option value="deposee">Déposée</option>
                                     <option value="en_cours">En cours de traitement</option>
                                     <option value="affectee_conventionne">Affectée à un conventionné</option>
@@ -228,23 +307,66 @@ import { PdfService } from '../../../../services/pdf.service';
                                     <option value="fermee">Fermée</option>
                                     <option value="rejete">Rejetée</option>
                                 </select>
+
+                                <!-- AI Copilot Trigger Section -->
+                                <div class="ai-copilot-trigger-zone mt-4">
+                                    <div class="ai-copilot-badge">
+                                        <i class="bi bi-stars"></i> CO-PILOTE IA PLATINUM
+                                    </div>
+                                    <p class="text-muted small mt-2 mb-3">
+                                        Générez instantanément une réponse officielle et hautement professionnelle en français pour le citoyen, adaptée au contexte de son dossier.
+                                    </p>
+                                    <button class="copilot-btn-glow w-100" 
+                                            [disabled]="generatingResponse" 
+                                            (click)="generateAIResponse()">
+                                        <span class="d-flex align-items-center justify-content-center gap-2">
+                                            <i class="bi bi-robot font-1-3" [class.spin-copilot]="generatingResponse"></i>
+                                            {{ generatingResponse ? 'Génération...' : 'Rédiger par l\'IA' }}
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-5">
-                                <input type="text" class="form-control status-select" placeholder="Commentaire optionnel..." [(ngModel)]="statusComment">
+
+                            <!-- Comment & Editor Column -->
+                            <div class="col-md-8 d-flex flex-column">
+                                <label class="form-label fw-bold text-muted d-flex justify-content-between align-items-center small mb-2">
+                                    <span>Commentaire Officiel ou Réponse au Citoyen</span>
+                                    <span *ngIf="generatingResponse" class="ai-writing-status text-primary">
+                                        <i class="bi bi-keyboard-fill animate-pulse me-1"></i> Écriture en cours...
+                                    </span>
+                                </label>
+                                
+                                <div class="textarea-wrapper position-relative flex-grow-1">
+                                    <textarea 
+                                        rows="6" 
+                                        class="form-control status-textarea-new" 
+                                        placeholder="Saisissez un commentaire de suivi ou générez une réponse officielle grâce à notre copilote IA à gauche..." 
+                                        [(ngModel)]="statusComment"
+                                        [disabled]="generatingResponse">
+                                    </textarea>
+                                    
+                                    <!-- Tiny glowing pulse when writing -->
+                                    <div *ngIf="generatingResponse" class="textarea-glow-pulse"></div>
+                                </div>
+
+                                <div class="d-flex justify-content-end align-items-center gap-3 mt-3">
+                                    <div *ngIf="statusUpdateSuccess" class="status-success-msg">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Dossier mis à jour !
+                                    </div>
+                                    
+                                    <button class="mfooter-btn confirm px-4 py-2" 
+                                            [disabled]="updatingStatus || selectedStatus === selectedReclamation.statut || generatingResponse" 
+                                            (click)="updateStatus()">
+                                        <i class="bi bi-check2-circle" *ngIf="!updatingStatus"></i>
+                                        <i class="bi bi-arrow-repeat spin" *ngIf="updatingStatus"></i>
+                                        Enregistrer les modifications
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-2">
-                                <button class="mfooter-btn confirm w-100" [disabled]="updatingStatus || selectedStatus === selectedReclamation.statut" (click)="updateStatus()">
-                                    <i class="bi bi-check2-circle" *ngIf="!updatingStatus"></i>
-                                    <i class="bi bi-arrow-repeat spin" *ngIf="updatingStatus"></i>
-                                    Valider
-                                </button>
-                            </div>
-                        </div>
-                        <div *ngIf="statusUpdateSuccess" class="status-success-msg mt-2 text-center">
-                            <i class="bi bi-check-circle-fill me-1"></i> Dossier mis à jour !
                         </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- === FOOTER === -->
                 <div class="mshell-footer">
@@ -422,16 +544,162 @@ import { PdfService } from '../../../../services/pdf.service';
         .timeline-action { font-size: 0.9rem; font-weight: 600; color: #334155; margin: 4px 0; }
         .timeline-status { font-size: 0.75rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
 
-        /* Print */
+        /* Print Optimization - Using Global Styles */
         @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 40px; background: white; }
-            .modal-overlay { background: white !important; backdrop-filter: none !important; }
-            .modal-shell { box-shadow: none !important; border: none !important; width: 100% !important; max-width: none !important; overflow: visible !important; }
-            .mshell-footer, .mshell-close-btn { display: none !important; }
-            .mcard { border: 1px solid #e2e8f0 !important; page-break-inside: avoid; box-shadow: none !important; }
+            body { background: white !important; }
+            .pro-sheet-container { display: block !important; visibility: visible !important; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
         }
+
+        /* AI COPILOT PREMIUM COSMETICS */
+        .status-update-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .status-update-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .status-select-new {
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            color: #1e293b;
+            outline: none;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .status-select-new:focus {
+            border-color: #6366f1;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        .ai-copilot-trigger-zone {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 18px;
+            position: relative;
+        }
+        .ai-copilot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            text-transform: uppercase;
+        }
+        .copilot-btn-glow {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .copilot-btn-glow:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.45);
+            filter: brightness(1.05);
+        }
+        .copilot-btn-glow:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .copilot-btn-glow:disabled {
+            background: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .spin-copilot {
+            animation: spin-ai 1.5s linear infinite;
+        }
+        @keyframes spin-ai {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .status-textarea-new {
+            padding: 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border: 2px solid #e2e8f0;
+            background: #ffffff;
+            color: #334155;
+            resize: none;
+            outline: none;
+            transition: all 0.3s;
+            width: 100%;
+            height: 100%;
+            min-height: 180px;
+        }
+        .status-textarea-new:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+        }
+        .status-textarea-new:disabled {
+            background: #f8fafc;
+            color: #64748b;
+        }
+        .textarea-wrapper {
+            position: relative;
+        }
+        .textarea-glow-pulse {
+            position: absolute;
+            inset: -2px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            z-index: -1;
+            opacity: 0.4;
+            animation: text-pulse 2s infinite alternate;
+        }
+        @keyframes text-pulse {
+            0% { filter: blur(3px); opacity: 0.2; }
+            100% { filter: blur(8px); opacity: 0.5; }
+        }
+        .ai-writing-status {
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            animation: text-blink 1.5s infinite;
+        }
+        @keyframes text-blink {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .font-1-3 {
+            font-size: 1.15rem;
+        }
+
+        .pro-sheet-container { display: none; }
     `]
 })
 export class AllReclamationsComponent implements OnInit {
@@ -439,18 +707,28 @@ export class AllReclamationsComponent implements OnInit {
     selectedReclamation: any = null;
     showModal = false;
     loading = true;
+    today = new Date();
 
     selectedStatus = '';
     statusComment = '';
     updatingStatus = false;
     statusUpdateSuccess = false;
+    generatingResponse = false;
+
+    userRole: string = '';
 
     constructor(
         private adminService: AdminService,
-        private pdfService: PdfService
+        private authService: AuthService,
+        private pdfService: PdfService,
+        private chatbotService: ChatbotService,
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
+        this.authService.currentUser$.subscribe(u => {
+            this.userRole = u?.role || '';
+        });
         const cached = localStorage.getItem('otic_admin_all_reclamations');
         if (cached) {
             try {
@@ -581,5 +859,32 @@ export class AllReclamationsComponent implements OnInit {
         if (!file) return '';
         if (file.startsWith('http')) return file;
         return `http://localhost:5000/uploads/${encodeURIComponent(file)}`;
+    }
+
+    // ==========================================
+    // IA COPILOT - PROFESSIONAL RESPONSE GENERATION
+    // ==========================================
+    async generateAIResponse() {
+        if (!this.selectedReclamation) return;
+        this.generatingResponse = true;
+        this.statusComment = '';
+
+        this.chatbotService.generateCopilotResponse(
+            this.selectedReclamation,
+            (chunk) => {
+                this.statusComment += chunk;
+                this.cdr.detectChanges(); // Force UI update during streaming
+            },
+            () => {
+                this.generatingResponse = false;
+                this.cdr.detectChanges();
+            },
+            (err) => {
+                console.error('Copilot Generation Error:', err);
+                this.generatingResponse = false;
+                this.statusComment = "Désolé, une erreur s'est produite lors de la génération de la réponse par le Copilote IA.";
+                this.cdr.detectChanges();
+            }
+        );
     }
 }

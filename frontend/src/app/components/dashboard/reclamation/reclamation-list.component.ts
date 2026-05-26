@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ReclamationService } from '../../../services/reclamation.service';
@@ -148,8 +148,67 @@ import { AuthService } from '../../../services/auth.service';
                 <!-- === MODAL BODY === -->
                 <div class="mshell-body" *ngIf="selectedReclamation" id="print-area">
 
-                    <!-- Section 1: Complainant & Classification -->
-                    <div class="mshell-section-title"><i class="bi bi-person-vcard me-2"></i>Informations Générales</div>
+                    <!-- Fiche Professionnelle Template (Visible only on Print) -->
+                    <div class="pro-sheet-container">
+                        <div class="sheet-header">
+                            <div class="sheet-branding">
+                                <h1 class="sheet-logo">OTIC</h1>
+                                <p class="sheet-sub">Office du Thermalisme et de l'Hydrothérapie</p>
+                            </div>
+                            <div class="sheet-title-box">
+                                <h2 class="sheet-doc-title">FICHE DE RÉCLAMATION</h2>
+                                <p class="sheet-ref">Référence : #{{selectedReclamation.trackingCode}}</p>
+                            </div>
+                        </div>
+
+                        <div class="sheet-grid">
+                            <div class="sheet-col">
+                                <h3 class="sheet-section-h">1. IDENTITÉ DU PLAIGNANT</h3>
+                                <div class="sheet-info-card">
+                                    <div class="sheet-row"><span class="sheet-label">Nom & Prénom :</span> <span class="sheet-val">{{selectedReclamation.user?.prenom}} {{selectedReclamation.user?.nom}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Email :</span> <span class="sheet-val">{{selectedReclamation.user?.email}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Téléphone :</span> <span class="sheet-val">{{selectedReclamation.user?.telephone}}</span></div>
+                                </div>
+                            </div>
+                            <div class="sheet-col">
+                                <h3 class="sheet-section-h">2. DÉTAILS DU DOSSIER</h3>
+                                <div class="sheet-info-card">
+                                    <div class="sheet-row"><span class="sheet-label">Date de dépôt :</span> <span class="sheet-val">{{selectedReclamation.dateCreation | date:'dd MMMM yyyy, HH:mm'}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Statut actuel :</span> <span class="sheet-val status-text">{{getStatusLabel(selectedReclamation.statut)}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Catégorie :</span> <span class="sheet-val">{{selectedReclamation.type}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Secteur :</span> <span class="sheet-val">{{selectedReclamation.secteur}}</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sheet-full-row">
+                            <h3 class="sheet-section-h">3. INCIDENT ET OPÉRATEUR CONCERNÉ</h3>
+                            <div class="sheet-info-card">
+                                <div class="sheet-row"><span class="sheet-label">Opérateur :</span> <span class="sheet-val highlight">{{selectedReclamation.operateur || 'Non spécifié'}}</span></div>
+                                <div class="sheet-row"><span class="sheet-label">Activité :</span> <span class="sheet-val">{{selectedReclamation.activite || 'Générale'}}</span></div>
+                                <div class="sheet-row" *ngIf="selectedReclamation.natures?.length">
+                                    <span class="sheet-label">Nature du grief :</span> <span class="sheet-val">{{selectedReclamation.natures.join(' — ')}}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sheet-full-row mt-4">
+                            <h3 class="sheet-section-h">4. EXPOSÉ DES FAITS</h3>
+                            <div class="sheet-description">
+                                {{selectedReclamation.description || 'Aucune description détaillée fournie.'}}
+                            </div>
+                        </div>
+
+                        <div class="sheet-footer-info">
+                            <div class="sheet-cert">Document certifié conforme par la plateforme centrale de l'OTIC</div>
+                            <div class="sheet-print-meta">Généré le {{ today | date:'dd/MM/yyyy HH:mm' }} — www.otic.tn</div>
+                        </div>
+                    </div>
+
+                    <!-- EVERYTHING BELOW IS SCREEN-ONLY IN CSS -->
+                    <div class="screen-only-content">
+                        <div class="mshell-section-title"><i class="bi bi-person-vcard me-2"></i>Informations Générales</div>
+                        <!-- REST OF THE MODAL BODY CONTENT -->
                     <div class="mshell-grid-2 mb-4">
                         <!-- Complainant Card -->
                         <div class="mcard">
@@ -214,18 +273,24 @@ import { AuthService } from '../../../services/auth.service';
                                 </div>
                             </div>
                         </div>
-                        <!-- Motifs Card -->
+                        <!-- QR Code & Motifs Card -->
                         <div class="mcard">
                             <div class="mcard-icon-wrap orange"><i class="bi bi-exclamation-diamond-fill"></i></div>
-                            <div class="mcard-body">
-                                <div class="mcard-label">Motifs &amp; Natures</div>
-                                <div class="d-flex flex-wrap gap-2 mt-3" *ngIf="selectedReclamation.natures?.length || selectedReclamation.autre_nature; else noNatures">
-                                    <span *ngFor="let nat of selectedReclamation.natures" class="motif-chip">{{nat}}</span>
-                                    <span *ngIf="selectedReclamation.autre_nature" class="motif-chip autre">{{selectedReclamation.autre_nature}}</span>
+                            <div class="mcard-body d-flex gap-3">
+                                <div class="flex-grow-1">
+                                    <div class="mcard-label">Motifs &amp; Natures</div>
+                                    <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="selectedReclamation.natures?.length || selectedReclamation.autre_nature; else noNatures">
+                                        <span *ngFor="let nat of selectedReclamation.natures" class="motif-chip">{{nat}}</span>
+                                        <span *ngIf="selectedReclamation.autre_nature" class="motif-chip autre">{{selectedReclamation.autre_nature}}</span>
+                                    </div>
+                                    <ng-template #noNatures>
+                                        <p class="text-muted small mt-2 mb-0">Aucun motif spécifié.</p>
+                                    </ng-template>
                                 </div>
-                                <ng-template #noNatures>
-                                    <p class="text-muted small mt-2 mb-0">Aucun motif spécifié.</p>
-                                </ng-template>
+                                <div class="qr-container" *ngIf="selectedReclamation.qrCode">
+                                    <img [src]="selectedReclamation.qrCode" alt="QR Code" class="qr-img">
+                                    <small class="qr-text">Scanner pour voir</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -257,19 +322,83 @@ import { AuthService } from '../../../services/auth.service';
                         </div>
                     </ng-container>
 
-                    <!-- Section 5: History (Timeline) -->
-                    <div class="mshell-section-title"><i class="bi bi-clock-history me-2"></i>Historique de votre demande</div>
-                    <div class="timeline-container mb-4">
-                        <div class="timeline-item" *ngFor="let entry of selectedReclamation.history">
-                            <div class="timeline-marker" [ngClass]="getStatusColorClass(entry.statut)"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-date">{{entry.date | date:'dd MMMM yyyy, HH:mm'}}</div>
-                                <div class="timeline-action">{{entry.action}}</div>
-                                <div class="timeline-status small opacity-75">{{getStatusLabel(entry.statut)}}</div>
+                    <!-- Section 5: Dynamic Stepper & Premium Interactive Timeline -->
+                    <div class="mshell-section-title"><i class="bi bi-clock-history me-2"></i>Suivi en temps réel de votre demande</div>
+                    
+                    <!-- Beautiful Glowing Stepper Card -->
+                    <div class="premium-stepper-card mb-4 shadow-sm">
+                        <div class="stepper-progress-bar">
+                            <div class="progress-fill" [style.width.%]="getStepperProgressWidth(selectedReclamation.statut)"></div>
+                        </div>
+                        
+                        <div class="stepper-steps">
+                            <!-- Step 1: Dépôt -->
+                            <div class="step-item" [ngClass]="getStepClass(selectedReclamation.statut, 0)">
+                                <div class="step-circle">
+                                    <i class="bi bi-file-earmark-arrow-up"></i>
+                                    <span class="step-check"><i class="bi bi-check-lg"></i></span>
+                                </div>
+                                <div class="step-title">Dépôt</div>
+                                <div class="step-desc">Demande enregistrée</div>
+                            </div>
+                            
+                            <!-- Step 2: Instruction -->
+                            <div class="step-item" [ngClass]="getStepClass(selectedReclamation.statut, 1)">
+                                <div class="step-circle">
+                                    <i class="bi bi-search"></i>
+                                    <span class="step-check"><i class="bi bi-check-lg"></i></span>
+                                </div>
+                                <div class="step-title">Instruction</div>
+                                <div class="step-desc">Analyse du dossier</div>
+                            </div>
+                            
+                            <!-- Step 3: Investigation -->
+                            <div class="step-item" [ngClass]="getStepClass(selectedReclamation.statut, 2)">
+                                <div class="step-circle">
+                                    <i class="bi bi-gear-wide-connected"></i>
+                                    <span class="step-check"><i class="bi bi-check-lg"></i></span>
+                                </div>
+                                <div class="step-title">Investigation</div>
+                                <div class="step-desc">Enquête en cours</div>
+                            </div>
+                            
+                            <!-- Step 4: Résolution -->
+                            <div class="step-item" [ngClass]="getStepClass(selectedReclamation.statut, 3)">
+                                <div class="step-circle">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span class="step-check"><i class="bi bi-check-lg"></i></span>
+                                </div>
+                                <div class="step-title">Résolution</div>
+                                <div class="step-desc">Solution apportée</div>
                             </div>
                         </div>
-                        <div *ngIf="!selectedReclamation.history?.length" class="text-muted small">
-                            L'historique détaillé sera disponible au fur et à mesure du traitement.
+                    </div>
+
+                    <!-- Glowing Glassmorphic Event Timeline -->
+                    <div class="glass-timeline mb-4">
+                        <div class="timeline-event-card" *ngFor="let entry of selectedReclamation.history" [ngClass]="'status-' + entry.statut">
+                            <div class="event-glow"></div>
+                            <div class="event-icon-circle" [ngClass]="getStatusColorClass(entry.statut)">
+                                <i class="bi" [ngClass]="{
+                                    'bi-hourglass-split': entry.statut === 'deposee' || entry.statut === 'en_attente',
+                                    'bi-arrow-repeat': entry.statut === 'en_cours',
+                                    'bi-question-circle-fill': entry.statut === 'demande_complement',
+                                    'bi-person-check-fill': entry.statut === 'affectee_conventionne',
+                                    'bi-check-circle-fill': entry.statut === 'resolue' || entry.statut === 'fermee',
+                                    'bi-x-circle-fill': entry.statut === 'rejete'
+                                }"></i>
+                            </div>
+                            <div class="event-content">
+                                <div class="event-header-row">
+                                    <span class="event-status-label">{{ getStatusLabel(entry.statut) }}</span>
+                                    <span class="event-date-text">{{ entry.date | date:'dd MMMM yyyy, HH:mm' }}</span>
+                                </div>
+                                <div class="event-body-text">{{ entry.action }}</div>
+                            </div>
+                        </div>
+                        <div *ngIf="!selectedReclamation.history?.length" class="empty-timeline-card">
+                            <i class="bi bi-clock-history fs-3 text-muted mb-2"></i>
+                            <div class="text-muted small">L'historique détaillé sera disponible au fur et à mesure du traitement.</div>
                         </div>
                     </div>
 
@@ -282,6 +411,7 @@ import { AuthService } from '../../../services/auth.service';
                         </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- === MODAL FOOTER === -->
                 <div class="mshell-footer">
@@ -495,17 +625,296 @@ import { AuthService } from '../../../services/auth.service';
     .mfooter-btn.ghost:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
     .mfooter-btn.pdf { background: linear-gradient(135deg, #ef4444, #b91c1c); color: white; box-shadow: 0 6px 20px -5px rgba(239,68,68,0.5); }
     .mfooter-btn.pdf:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 12px 24px -6px rgba(239,68,68,0.5); }
-
-    /* ========================= PRINT ========================= */
-    @media print {
-        body * { visibility: hidden; }
-        #print-area, #print-area * { visibility: visible; }
-        #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; }
-        .modal-overlay { background: white !important; backdrop-filter: none !important; }
-        .modal-shell { box-shadow: none !important; border: none !important; width: 100% !important; max-width: none !important; overflow: visible !important; }
-        .mshell-footer, .mshell-close-btn { display: none !important; }
-        .mcard { border: 1px solid #e2e8f0 !important; page-break-inside: avoid; box-shadow: none !important; }
+    
+    /* QR Code Styles */
+    .qr-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #fff;
+        padding: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        width: 100px;
+        flex-shrink: 0;
     }
+    .qr-img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+    }
+    .qr-text {
+        font-size: 0.6rem;
+        color: #94a3b8;
+        margin-top: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+        /* Print Optimization - Using Global Styles */
+        @media print {
+            body { background: white !important; }
+            .pro-sheet-container { display: block !important; visibility: visible !important; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+        .pro-sheet-container { display: none; }
+
+        /* ==========================================
+           PREMIUM DYNAMIC STEPPER & TIMELINE
+           ========================================== */
+        .premium-stepper-card {
+            background: #ffffff;
+            border: 1px solid #e8edf5;
+            border-radius: 24px;
+            padding: 30px 20px;
+            position: relative;
+        }
+
+        .stepper-progress-bar {
+            position: absolute;
+            top: 52px;
+            left: 10%;
+            right: 10%;
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .stepper-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 20%;
+            text-align: center;
+        }
+
+        .step-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #94a3b8;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .step-check {
+            position: absolute;
+            inset: -3px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* completed state */
+        .step-item.completed .step-circle {
+            border-color: #10b981;
+            color: #10b981;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2);
+        }
+
+        .step-item.completed .step-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* active state */
+        .step-item.active .step-circle {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #eff6ff;
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 10px 20px -3px rgba(59, 130, 246, 0.3);
+            animation: pulse-step-blue 2s infinite;
+        }
+
+        @keyframes pulse-step-blue {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        .step-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #64748b;
+            margin-top: 12px;
+            transition: color 0.3s;
+        }
+
+        .step-item.active .step-title {
+            color: #3b82f6;
+        }
+
+        .step-item.completed .step-title {
+            color: #10b981;
+        }
+
+        .step-desc {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 576px) {
+            .stepper-progress-bar { display: none; }
+            .stepper-steps { flex-direction: column; gap: 20px; align-items: flex-start; padding-left: 20px; }
+            .step-item { flex-direction: row; width: 100%; text-align: left; gap: 15px; }
+            .step-title { margin-top: 0; }
+            .step-desc { margin-top: 0; }
+        }
+
+        /* Glassmorphic Event Timeline */
+        .glass-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .timeline-event-card {
+            background: #ffffff;
+            border: 1px solid #e8edf5;
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .timeline-event-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
+
+        .event-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: #e2e8f0;
+        }
+
+        /* Color borders by status */
+        .timeline-event-card.status-deposee .event-glow,
+        .timeline-event-card.status-en_attente .event-glow {
+            background: #fbbf24;
+        }
+        .timeline-event-card.status-en_cours .event-glow {
+            background: #3b82f6;
+        }
+        .timeline-event-card.status-demande_complement .event-glow {
+            background: #a855f7;
+        }
+        .timeline-event-card.status-affectee_conventionne .event-glow {
+            background: #2563eb;
+        }
+        .timeline-event-card.status-resolue .event-glow,
+        .timeline-event-card.status-fermee .event-glow {
+            background: #10b981;
+        }
+        .timeline-event-card.status-rejete .event-glow {
+            background: #ef4444;
+        }
+
+        .event-icon-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .event-icon-circle.bg-warning { background: linear-gradient(135deg, #fbbf24, #d97706) !important; }
+        .event-icon-circle.bg-info { background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; }
+        .event-icon-circle.bg-primary { background: linear-gradient(135deg, #a855f7, #6d28d9) !important; }
+        .event-icon-circle.bg-success { background: linear-gradient(135deg, #10b981, #059669) !important; }
+        .event-icon-circle.bg-danger { background: linear-gradient(135deg, #ef4444, #b91c1c) !important; }
+
+        .event-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .event-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .event-status-label {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #334155;
+            letter-spacing: 0.3px;
+        }
+
+        .event-date-text {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .event-body-text {
+            font-size: 0.88rem;
+            color: #475569;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .empty-timeline-card {
+            background: #ffffff;
+            border: 1px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+        }
   `]
 
 })
@@ -516,12 +925,14 @@ export class ReclamationListComponent implements OnInit {
     searchTerm = '';
     selectedReclamation: any = null;
     showModal = false;
+    today = new Date();
 
     constructor(
         private reclamationService: ReclamationService,
         private notificationService: NotificationService,
         private authService: AuthService,
         private pdfService: PdfService,
+        private route: ActivatedRoute,
         private cdr: ChangeDetectorRef
     ) { }
 
@@ -549,6 +960,22 @@ export class ReclamationListComponent implements OnInit {
             this.reclamations = [...this.allReclamations];
             localStorage.setItem('otic_my_reclamations', JSON.stringify(this.allReclamations));
             console.log('✅ Reclamations loaded:', this.reclamations.length);
+
+            // Check if we need to open a specific reclamation (from QR code/Link)
+            const id = this.route.snapshot.paramMap.get('id');
+            if (id) {
+                const target = this.reclamations.find(r => r._id === id);
+                if (target) {
+                    this.openDetails(target);
+                } else {
+                    // If not found in user list, we might need to fetch it specifically
+                    // but for now let's assume it's in the list if the user has access
+                    this.reclamationService.getReclamationById(id).subscribe({
+                        next: (rec) => this.openDetails(rec),
+                        error: () => console.warn('Could not load specific reclamation')
+                    });
+                }
+            }
         } catch (err) {
             console.error('❌ Error fetching reclamations:', err);
         } finally {
@@ -640,5 +1067,45 @@ export class ReclamationListComponent implements OnInit {
         if (!file) return '';
         if (file.startsWith('http')) return file;
         return `http://localhost:5000/uploads/${encodeURIComponent(file)}`;
+    }
+
+    // ==========================================
+    // STEPPER LOGIC FOR REAL-TIME TRACKING
+    // ==========================================
+    getStepperStageIndex(status: string): number {
+        if (!status) return 0;
+        switch (status) {
+            case 'deposee':
+            case 'en_attente':
+                return 0;
+            case 'demande_complement':
+            case 'en_cours':
+                return 1;
+            case 'affectee_conventionne':
+                return 2;
+            case 'resolue':
+            case 'fermee':
+            case 'rejete':
+                return 3;
+            default:
+                return 0;
+        }
+    }
+
+    getStepperProgressWidth(status: string): number {
+        const stageIndex = this.getStepperStageIndex(status);
+        return (stageIndex / 3) * 100;
+    }
+
+    getStepClass(status: string, stepIndex: number): string {
+        if (!status) return 'pending';
+        const currentStageIndex = this.getStepperStageIndex(status);
+        if (currentStageIndex > stepIndex) {
+            return 'completed';
+        } else if (currentStageIndex === stepIndex) {
+            return 'active';
+        } else {
+            return 'pending';
+        }
     }
 }

@@ -92,8 +92,69 @@ import { AdminService } from '../../../../services/admin.service';
                 <!-- === BODY === -->
                 <div class="mshell-body" *ngIf="selectedReclamation" id="print-area">
 
-                    <!-- Section 1: User & Classification -->
-                    <div class="mshell-section-title"><i class="bi bi-person-vcard me-2"></i>Informations du Plaignant</div>
+                    <!-- Fiche Professionnelle Template (Visible only on Print) -->
+                    <div class="pro-sheet-container">
+                        <div class="sheet-header">
+                            <div class="sheet-branding">
+                                <h1 class="sheet-logo">OTIC</h1>
+                                <p class="sheet-sub">Office du Thermalisme et de l'Hydrothérapie</p>
+                            </div>
+                            <div class="sheet-title-box">
+                                <h2 class="sheet-doc-title">FICHE DE RÉCLAMATION</h2>
+                                <p class="sheet-ref">Référence : #{{selectedReclamation.trackingCode}}</p>
+                            </div>
+                        </div>
+
+                        <div class="sheet-grid">
+                            <div class="sheet-col">
+                                <h3 class="sheet-section-h">1. IDENTITÉ DU PLAIGNANT</h3>
+                                <div class="sheet-info-card">
+                                    <div class="sheet-row"><span class="sheet-label">Nom & Prénom :</span> <span class="sheet-val">{{selectedReclamation.user?.prenom}} {{selectedReclamation.user?.nom}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Email :</span> <span class="sheet-val">{{selectedReclamation.user?.email}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Téléphone :</span> <span class="sheet-val">{{selectedReclamation.user?.telephone}}</span></div>
+                                    <div class="sheet-row" *ngIf="selectedReclamation.user?.adresse">
+                                        <span class="sheet-label">Adresse :</span> <span class="sheet-val">{{selectedReclamation.user?.adresse.ville}}, {{selectedReclamation.user?.adresse.region}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sheet-col">
+                                <h3 class="sheet-section-h">2. DÉTAILS DU DOSSIER</h3>
+                                <div class="sheet-info-card">
+                                    <div class="sheet-row"><span class="sheet-label">Date de dépôt :</span> <span class="sheet-val">{{selectedReclamation.dateCreation | date:'dd MMMM yyyy, HH:mm'}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Statut actuel :</span> <span class="sheet-val status-text">{{getStatusLabel(selectedReclamation.statut)}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Catégorie :</span> <span class="sheet-val">{{selectedReclamation.type}}</span></div>
+                                    <div class="sheet-row"><span class="sheet-label">Secteur :</span> <span class="sheet-val">{{selectedReclamation.secteur}}</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sheet-full-row">
+                            <h3 class="sheet-section-h">3. INCIDENT ET OPÉRATEUR CONCERNÉ</h3>
+                            <div class="sheet-info-card">
+                                <div class="sheet-row"><span class="sheet-label">Opérateur :</span> <span class="sheet-val highlight">{{selectedReclamation.operateur || 'Non spécifié'}}</span></div>
+                                <div class="sheet-row"><span class="sheet-label">Activité :</span> <span class="sheet-val">{{selectedReclamation.activite || 'Générale'}}</span></div>
+                                <div class="sheet-row" *ngIf="selectedReclamation.natures?.length">
+                                    <span class="sheet-label">Nature du grief :</span> <span class="sheet-val">{{selectedReclamation.natures.join(' — ')}}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sheet-full-row mt-4">
+                            <h3 class="sheet-section-h">4. EXPOSÉ DES FAITS</h3>
+                            <div class="sheet-description">
+                                {{selectedReclamation.description || 'Aucune description détaillée fournie.'}}
+                            </div>
+                        </div>
+
+                        <div class="sheet-footer-info">
+                            <div class="sheet-cert">Document certifié conforme par la plateforme centrale de l'OTIC</div>
+                            <div class="sheet-print-meta">Généré le {{ today | date:'dd/MM/yyyy HH:mm' }} — www.otic.tn</div>
+                        </div>
+                    </div>
+
+                    <!-- EVERYTHING BELOW IS SCREEN-ONLY IN CSS -->
+                    <div class="screen-only-content">
+                        <div class="mshell-section-title"><i class="bi bi-person-vcard me-2"></i>Informations du Plaignant</div>
                     <div class="mshell-grid-2 mb-4">
                         <div class="mcard">
                             <div class="mcard-icon-wrap blue"><i class="bi bi-person-fill"></i></div>
@@ -206,6 +267,7 @@ import { AdminService } from '../../../../services/admin.service';
                         </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- === FOOTER === -->
                 <div class="mshell-footer">
@@ -351,14 +413,13 @@ import { AdminService } from '../../../../services/admin.service';
         .ev-action { font-size: 0.65rem; color: #3b82f6; font-weight: 600; }
         .count-badge { background: #3b82f6; color: white; padding: 2px 6px; border-radius: 50px; font-size: 0.6rem; margin-left: 6px; }
 
+        /* Print Optimization - Using Global Styles */
         @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
-            .modal-overlay { background: white; backdrop-filter: none; }
-            .modal-shell { box-shadow: none; border: none; width: 100% !important; max-width: none !important; }
-            .mshell-footer, .mshell-close-btn { display: none !important; }
+            body { background: white !important; }
+            .pro-sheet-container { display: block !important; visibility: visible !important; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
         }
+        .pro-sheet-container { display: none; }
     `]
 })
 export class AssignReclamationComponent implements OnInit {
@@ -370,6 +431,7 @@ export class AssignReclamationComponent implements OnInit {
     assigning = false;
     successMsg = '';
     errorMsg = '';
+    today = new Date();
 
     constructor(private adminService: AdminService) { }
 

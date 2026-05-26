@@ -7,6 +7,7 @@ const Governorate = require('../models/Governorate');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const QRCode = require('qrcode');
 
 // Set up Multer for file uploads
 const uploadDir = path.join(__dirname, '../uploads');
@@ -127,6 +128,16 @@ router.post('/', [auth, upload.array('preuves', 10)], async (req, res) => {
             }]
         });
 
+        // Generate QR Code
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4300';
+        const qrUrl = `${frontendUrl}/reclamations/view/${newReclamation._id}`;
+        try {
+            newReclamation.qrCode = await QRCode.toDataURL(qrUrl);
+            console.log('🖼️ QR Code generated for URL:', qrUrl);
+        } catch (qrErr) {
+            console.error('❌ Failed to generate QR Code:', qrErr.message);
+        }
+
         const reclamation = await newReclamation.save();
 
         console.log('✅ Reclamation saved successfully:', reclamation._id);
@@ -142,6 +153,33 @@ router.post('/', [auth, upload.array('preuves', 10)], async (req, res) => {
             return res.status(400).json({ msg: messages.join(', ') });
         }
 
+        res.status(500).send('Server error');
+    }
+});
+
+// @route   GET api/reclamations/:id
+// @desc    Get reclamation by ID
+// @access  Private
+router.get('/:id', auth, async (req, res) => {
+    try {
+        const reclamation = await Reclamation.findById(req.params.id).populate('user', '-password');
+
+        if (!reclamation) {
+            return res.status(404).json({ msg: 'Réclamation non trouvée' });
+        }
+
+        // Check if user owns the reclamation or is an admin (optional check, depends on security model)
+        // If you want strictly private:
+        // if (reclamation.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+        //     return res.status(401).json({ msg: 'Non autorisé' });
+        // }
+
+        res.json(reclamation);
+    } catch (err) {
+        console.error(err.message);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ msg: 'Réclamation non trouvée' });
+        }
         res.status(500).send('Server error');
     }
 });

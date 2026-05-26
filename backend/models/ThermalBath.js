@@ -32,6 +32,18 @@ const ThermalBathSchema = new mongoose.Schema({
     },
     imageUrl: {
         type: String
+    },
+    trustScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+        default: 85
+    },
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: 4.2
     }
 }, {
     timestamps: true
