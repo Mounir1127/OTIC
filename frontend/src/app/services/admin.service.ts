@@ -1,13 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
-import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AdminService {
-    private apiUrl = `${environment.apiUrl}/admin`;
+    private apiUrl = 'http://localhost:5000/api/admin';
 
     private refreshUsersSource = new Subject<void>();
     refreshUsers$ = this.refreshUsersSource.asObservable();
