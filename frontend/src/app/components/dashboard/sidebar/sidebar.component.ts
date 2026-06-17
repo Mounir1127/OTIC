@@ -45,22 +45,32 @@ import { startWith, switchMap } from 'rxjs/operators';
         </li>
       </ul>
       <hr class="border-secondary opacity-50">
-      <div class="dropdown">
-        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-          <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center me-2 overflow-hidden" [ngClass]="{'ms-2': currentSettings.language === 'ar'}" style="width: 32px; height: 32px;">
-            <i class="bi bi-person-fill text-dark" *ngIf="!user?.photoProfil"></i>
-            <img [src]="user?.photoProfil" *ngIf="user?.photoProfil" class="img-fluid w-100 h-100" style="object-fit: cover;">
-          </div>
-          <div class="d-flex flex-column">
-            <strong *ngIf="user">{{ user.prenom }} {{ user.nom }}</strong>
-            <strong *ngIf="!user">{{ translate('profile') }}</strong>
-          </div>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-dark text-small shadow" [ngClass]="{'text-end': currentSettings.language === 'ar'}" aria-labelledby="dropdownUser1">
-          <li><a class="dropdown-item" routerLink="/dashboard/profile">{{ translate('settings') }}</a></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><button class="dropdown-item" (click)="logout()">{{ translate('logout') }}</button></li>
-        </ul>
+      <div class="dropdown mt-2">
+        <div class="d-flex align-items-center profile-section-nav">
+          <!-- Main Profile Link -->
+          <a routerLink="/dashboard/profile" class="d-flex align-items-center text-white text-decoration-none flex-grow-1 profile-link-main" role="button">
+            <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center me-2 overflow-hidden shadow-sm" [ngClass]="{'ms-2': currentSettings.language === 'ar'}" style="width: 38px; height: 38px; border: 2px solid rgba(255,255,255,0.1);">
+              <i class="bi bi-person-fill text-dark fs-5" *ngIf="!user?.photoProfil"></i>
+              <img [src]="user?.photoProfil" *ngIf="user?.photoProfil" class="img-fluid w-100 h-100" style="object-fit: cover;">
+            </div>
+            <div class="d-flex flex-column text-truncate" style="max-width: 130px;">
+              <strong *ngIf="user" class="text-truncate small">{{ user.prenom }} {{ user.nom }}</strong>
+              <strong *ngIf="!user" class="small">{{ translate('profile') }}</strong>
+              <span class="text-white-50" style="font-size: 0.65rem;">{{ translate('settings') }}</span>
+            </div>
+          </a>
+          
+          <!-- Dropdown Toggle Only -->
+          <a href="javascript:void(0)" class="text-white-50 ms-auto dropdown-toggle-custom" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-three-dots-vertical"></i>
+          </a>
+
+          <ul class="dropdown-menu dropdown-menu-dark text-small shadow-lg border-secondary border-opacity-25" [ngClass]="{'text-end': currentSettings.language === 'ar'}" aria-labelledby="dropdownUser1">
+            <li><a class="dropdown-item py-2" routerLink="/dashboard/profile"><i class="bi bi-person-circle me-2"></i> {{ translate('profile') }}</a></li>
+            <li><hr class="dropdown-divider opacity-50"></li>
+            <li><button class="dropdown-item py-2 text-danger" (click)="logout()"><i class="bi bi-box-arrow-right me-2"></i> {{ translate('logout') }}</button></li>
+          </ul>
+        </div>
       </div>
     </div>
   `,
@@ -69,6 +79,8 @@ import { startWith, switchMap } from 'rxjs/operators';
       background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%) !important;
       box-shadow: 4px 0 10px rgba(0,0,0,0.1);
       transition: all 0.3s ease;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     
     .nav-link {
@@ -116,6 +128,41 @@ import { startWith, switchMap } from 'rxjs/operators';
       70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
       100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
     }
+
+    /* Custom Scrollbar for Sidebar */
+    .sidebar-container::-webkit-scrollbar {
+      width: 5px;
+    }
+    .sidebar-container::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+    }
+    .sidebar-container::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+    }
+    .sidebar-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(251, 191, 36, 0.3);
+    }
+
+    .profile-link-main {
+      padding: 8px;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .profile-link-main:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    .dropdown-toggle-custom {
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .dropdown-toggle-custom:hover {
+      background: rgba(255,255,255,0.1);
+      color: white !important;
+    }
+    .dropdown-toggle-custom::after { display: none; } /* Hide bootstrap arrow */
   `]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
@@ -251,10 +298,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
   getRoleLabel(): string {
     if (!this.user) return '';
     switch (this.user.role) {
-      case 'super_admin': return 'Super Administration';
-      case 'admin_regional': return 'Administration Régionale';
-      case 'admin_tre': return 'Administration Diaspora (TRE)';
-      default: return 'Espace Consommateur';
+      case 'super_admin': return this.translate('role_super_admin');
+      case 'admin_regional': return this.translate('role_admin_regional');
+      case 'admin_tre': return this.translate('role_admin_tre');
+      default: return this.translate('role_user');
     }
   }
 

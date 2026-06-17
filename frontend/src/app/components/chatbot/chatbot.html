@@ -1,31 +1,69 @@
-<div class="chatbot-container">
-  <!-- Toggle Button -->
-  <button class="chatbot-toggle" (click)="toggleChat()">
-    <i class="bi" [ngClass]="isOpen ? 'bi-x-lg' : 'bi-robot'"></i>
-  </button>
-
+<div class="chatbot-container" [class.is-open]="isOpen">
   <!-- Chat Window -->
-  <div class="chatbot-window" *ngIf="isOpen">
+  <div class="chatbot-window shadow-2xl" *ngIf="isOpen">
     <div class="chatbot-header">
-      <h3>Assistant OTIC</h3>
-      <button class="close-btn" (click)="toggleChat()">×</button>
+      <div class="profile-info">
+        <div class="avatar-header">
+          <img src="logo.png" alt="OTIC Logo">
+          <span class="status-dot"></span>
+        </div>
+        <div class="header-text">
+          <h3>Assistant OTIC</h3>
+          <p>Actif maintenant</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="action-btn clear-btn" (click)="clearHistory()" title="Effacer l'historique">
+          <i class="bi bi-trash"></i>
+        </button>
+        <button class="close-btn" (click)="toggleChat()" aria-label="Minimize">
+          <i class="bi bi-dash-lg"></i>
+        </button>
+      </div>
     </div>
 
-    <div class="messages-container">
-      <div *ngFor="let msg of messages" class="message" [ngClass]="msg.sender">
-        {{ msg.text }}
+    <div class="messages-container" #scrollMe>
+      <div *ngFor="let msg of messages" class="message-wrapper" [ngClass]="msg.sender">
+        <div class="avatar" *ngIf="msg.sender === 'bot'">
+          <img src="logo.png" alt="OTIC">
+        </div>
+        <div class="message-content">
+          <div class="message-bubble">
+            {{ msg.text }}
+          </div>
+          <span class="message-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+        </div>
       </div>
-      <div *ngIf="isTyping" class="typing-indicator">
-        L'assistant réfléchit...
+
+      <!-- Typing Indicator -->
+      <div *ngIf="isTyping" class="message-wrapper bot">
+        <div class="avatar">
+          <img src="logo.png" alt="OTIC">
+        </div>
+        <div class="message-content">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="input-container">
-      <input type="text" [(ngModel)]="userInput" (keyup.enter)="sendMessage()" placeholder="Tapez votre message..."
-        [disabled]="isTyping">
-      <button class="send-btn" (click)="sendMessage()" [disabled]="isTyping || !userInput.trim()">
-        <i class="bi bi-send-fill"></i>
-      </button>
+      <div class="input-wrapper">
+        <input type="text" [(ngModel)]="userInput" (keyup.enter)="sendMessage()"
+          placeholder="Posez votre question ici..." [disabled]="isTyping">
+        <button class="send-btn" (click)="sendMessage()" [disabled]="isTyping || !userInput.trim()">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- Toggle Button -->
+  <button class="chatbot-toggle shadow-lg" (click)="toggleChat()" [attr.aria-expanded]="isOpen">
+    <div class="icon-wrapper">
+      <i class="bi bi-chat-dots-fill" *ngIf="!isOpen"></i>
+      <i class="bi bi-x-lg" *ngIf="isOpen"></i>
+    </div>
+  </button>
 </div>

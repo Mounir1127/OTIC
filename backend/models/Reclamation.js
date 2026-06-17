@@ -45,7 +45,7 @@ const ReclamationSchema = new mongoose.Schema({
     },
     statut: {
         type: String,
-        enum: ['deposee', 'en_cours', 'affectee_conventionne', 'resolue', 'fermee', 'rejete', 'demande_complement'],
+        enum: ['deposee', 'en_cours', 'affectee_conventionne', 'resolue', 'rejete', 'demande_complement'],
         default: 'deposee'
     },
     conventionne: {

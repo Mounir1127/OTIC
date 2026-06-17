@@ -57,11 +57,11 @@ router.post("/register", async (req, res) => {
 
         // 📞 Tunisian Phone Validation
         const cleanPhone = telephone.replace(/\s/g, '');
-        const phoneRegex = /^(?:\+216|00216)?([2579]\d{7})$/;
+        const phoneRegex = /^(?:\+216|00216)?([24579]\d{7})$/;
         const match = cleanPhone.match(phoneRegex);
 
         if (!match) {
-            return res.status(400).json({ msg: "Format de téléphone tunisien invalide (8 chiffres commençant par 2, 5, 7 ou 9 requis)" });
+            return res.status(400).json({ msg: "Format de téléphone tunisien invalide (8 chiffres commençant par 2, 4, 5, 7 ou 9 requis)" });
         }
 
         // Use normalized 8-digit phone
@@ -260,7 +260,14 @@ router.post("/login", async (req, res) => {
 // @access  Private
 router.get("/me", require("../middleware/auth"), async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select("-password");
+        const user = await User.findById(req.user.id).select("-password").lean();
+        if (!user) return res.status(404).json({ msg: "Utilisateur non trouvé" });
+
+        // Ensure address object exists for frontend
+        if (!user.adresse) {
+            user.adresse = { ville: '', region: '', codePostal: '' };
+        }
+
         console.log('🔍 GET /api/auth/me - Returning user:', { id: user._id, email: user.email, name: user.nom });
         res.json(user);
     } catch (err) {

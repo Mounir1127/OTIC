@@ -232,12 +232,12 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
     messages: any[] = [];
     selectedContact: any = null;
     currentUser: any = null;
-    
+
     loadingContacts = true;
     loadingMessages = false;
     sending = false;
     newMessage = '';
-    
+
     private conversationsCache: { [userId: string]: any[] } = {};
     private refreshInterval: any;
 
@@ -253,7 +253,7 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
             try {
                 this.contacts = JSON.parse(cached);
                 this.loadingContacts = false;
-            } catch (e) {}
+            } catch (e) { }
         }
 
         this.authService.currentUser$.subscribe(u => {
@@ -262,12 +262,14 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
                 this.loadContacts();
             }
         });
-        
+
         // Auto-refresh every 10 seconds: both chat history and contact list (badges/sorting)
         this.refreshInterval = setInterval(() => {
-            this.loadContacts();
-            if (this.selectedContact) {
-                this.loadMessages(this.selectedContact._id, false);
+            if (this.currentUser) {
+                this.loadContacts();
+                if (this.selectedContact) {
+                    this.loadMessages(this.selectedContact._id, false);
+                }
             }
         }, 10000);
     }
@@ -287,10 +289,11 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
             setTimeout(() => {
                 this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
             }, 50);
-        } catch(err) { }
+        } catch (err) { }
     }
 
     loadContacts() {
+        if (!this.currentUser) return;
         if (this.contacts.length === 0) {
             this.loadingContacts = true;
         }
@@ -299,7 +302,7 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
                 this.contacts = data;
                 localStorage.setItem('otic_admin_messages_contacts', JSON.stringify(this.contacts));
                 this.loadingContacts = false;
-                
+
                 // PRE-FETCH all conversations in background to allow "sans chargement" switching
                 this.contacts.forEach(contact => {
                     this.preloadConversation(contact._id);
@@ -320,7 +323,7 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
             if (cached) {
                 try {
                     this.conversationsCache[userId] = JSON.parse(cached);
-                } catch (e) {}
+                } catch (e) { }
             }
         }
 
@@ -329,7 +332,7 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
             next: (data) => {
                 this.conversationsCache[userId] = data;
                 localStorage.setItem(cacheKey, JSON.stringify(data));
-                
+
                 // If this is the currently selected contact, update the view too
                 if (this.selectedContact && this.selectedContact._id === userId) {
                     this.messages = data;
@@ -349,7 +352,7 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
             this.messages = this.conversationsCache[contact._id];
             this.loadingMessages = false;
             this.scrollToBottom();
-        } 
+        }
         // 2. Check localStorage if memory cache misses
         else {
             const cacheKey = 'otic_admin_chat_' + contact._id;
@@ -369,12 +372,13 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
                 this.loadingMessages = true;
             }
         }
-        
+
         // 3. Always refresh from server in background
         this.loadMessages(contact._id, this.messages.length === 0);
     }
 
     loadMessages(userId: string, scroll: boolean = true) {
+        if (!this.currentUser) return;
         this.msgService.getConversation(userId).subscribe({
             next: (data) => {
                 const cacheKey = 'otic_admin_chat_' + userId;
@@ -393,10 +397,10 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
 
     sendMessage() {
         if (!this.newMessage.trim() || !this.selectedContact) return;
-        
+
         const pushMsg = this.newMessage;
         this.newMessage = ''; // clear input immediately 
-        
+
         // Optimistic UI: display immediately
         const tempId = 'temp-' + Date.now();
         const tempMessage = {
@@ -408,11 +412,11 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
             read: false,
             isTemp: true
         };
-        
+
         this.messages.push(tempMessage);
         this.conversationsCache[this.selectedContact._id] = this.messages; // Update memory cache
         this.scrollToBottom();
-        
+
         // Move contact to the top of the sidebar list
         const contactIndex = this.contacts.findIndex(c => c._id === this.selectedContact._id);
         if (contactIndex > -1) {
@@ -420,7 +424,7 @@ export class MessagesComponent implements OnInit, AfterViewChecked {
             this.contacts.unshift(contact);
             localStorage.setItem('otic_admin_messages_contacts', JSON.stringify(this.contacts));
         }
-        
+
         // Save optimistic state to cache
         const cacheKey = 'otic_admin_chat_' + this.selectedContact._id;
         localStorage.setItem(cacheKey, JSON.stringify(this.messages));

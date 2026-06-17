@@ -1,7 +1,7 @@
 import { Component, NgZone, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { ReclamationService } from '../../../services/reclamation.service';
@@ -10,7 +10,7 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
 @Component({
     selector: 'app-add-reclamation',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterModule],
     template: `
     <div class="row justify-content-center fade-in">
       <div class="col-lg-10 col-xl-9">
@@ -75,8 +75,8 @@ import { RECLAMATION_SECTORS, RECLAMATION_NATURES } from '../../../data/reclamat
 
                 <p class="text-muted small mb-4">Veuillez conserver ce code ou scanner le QR code pour suivre l'état de votre demande.</p>
                 <div class="d-flex justify-content-center gap-3">
-                    <button class="btn btn-outline-primary px-4 py-2 rounded-pill fw-medium" (click)="resetForm()">Nouvelle réclamation</button>
-                    <button class="btn btn-primary px-4 py-2 rounded-pill fw-medium" routerLink="/dashboard/reclamation">Voir mes réclamations</button>
+                    <button class="btn btn-outline-primary px-4 py-2 rounded-pill fw-medium" (click)="resetForm()">NOUVELLE RÉCLAMATION</button>
+                    <button class="btn btn-primary px-4 py-2 rounded-pill fw-medium" routerLink="/dashboard/reclamation">VOIR MES RÉCLAMATIONS</button>
                 </div>
             </div>
 
@@ -440,7 +440,7 @@ export class AddReclamationComponent {
                         'fraud': this.isTREUser ? 'Fraude commerciale' : 'Fraude commerciale (International)',
                         'admin': this.isTREUser ? 'Questions administratives' : 'Questions administratives et consulaires'
                     };
-                    
+
                     if (this.isTREUser) {
                         this.reclamation.secteur = mapping[decodedCat] || this.reclamation.secteur;
                         this.onSectorChange();

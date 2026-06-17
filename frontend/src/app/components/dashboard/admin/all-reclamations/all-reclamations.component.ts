@@ -12,11 +12,35 @@ import { ChatbotService } from '../../../../services/chatbot.service';
     imports: [CommonModule, FormsModule],
     template: `
     <div class="admin-container fade-in">
-        <div class="header-section">
-            <h2>Toutes les Réclamations</h2>
-            <p class="text-muted">
-                {{ userRole === 'admin_tre' ? 'Historique complet des réclamations de la diaspora' : 'Historique complet des réclamations de votre région' }}
-            </p>
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6">
+                <h2 class="fw-bold text-dark mb-1">Toutes les Réclamations</h2>
+                <p class="text-muted mb-0">
+                    {{ userRole === 'admin_tre' ? 'Historique complet des réclamations de la diaspora' : 'Historique complet des réclamations de votre région' }}
+                </p>
+            </div>
+            <div class="col-md-6 d-flex justify-content-md-end align-items-center gap-2 mt-3 mt-md-0">
+                <!-- Date range for period -->
+                <div class="d-flex align-items-center gap-2 me-2">
+                    <input type="date" class="form-control form-control-sm rounded-pill" [(ngModel)]="startDate" (change)="applyFilters()">
+                    <span class="text-muted small">à</span>
+                    <input type="date" class="form-control form-control-sm rounded-pill" [(ngModel)]="endDate" (change)="applyFilters()">
+                </div>
+                
+                <!-- Country filter for TRE -->
+                <div *ngIf="userRole === 'admin_tre' || selectedTypeFilter === 'tre'" class="country-filter-wrap" style="min-width: 160px;">
+                    <select class="form-select form-select-sm rounded-pill border-light-subtle bg-white shadow-sm" [(ngModel)]="selectedCountry" (change)="applyFilters()">
+                        <option value="">Tous les pays</option>
+                        <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+                    </select>
+                </div>
+
+                <div class="btn-group shadow-sm rounded-pill overflow-hidden bg-white" *ngIf="userRole === 'super_admin'">
+                    <button class="btn btn-sm px-3 py-2 border-0" [ngClass]="selectedTypeFilter === 'all' ? 'btn-primary' : 'btn-light'" (click)="setTypeFilter('all')">Tout</button>
+                    <button class="btn btn-sm px-3 py-2 border-0" [ngClass]="selectedTypeFilter === 'regional' ? 'btn-primary' : 'btn-light'" (click)="setTypeFilter('regional')">Régional</button>
+                    <button class="btn btn-sm px-3 py-2 border-0" [ngClass]="selectedTypeFilter === 'tre' ? 'btn-primary' : 'btn-light'" (click)="setTypeFilter('tre')">BDE (TRE)</button>
+                </div>
+            </div>
         </div>
 
         <div class="card list-card">
@@ -33,7 +57,7 @@ import { ChatbotService } from '../../../../services/chatbot.service';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let rec of reclamations">
+                        <tr *ngFor="let rec of filteredReclamations">
                             <td>
                                 <span class="tracking-badge">{{rec.trackingCode}}</span>
                                 <span *ngIf="!rec.lu" class="badge bg-danger ms-2 animate-pulse small">NOUVEAU</span>
@@ -283,7 +307,7 @@ import { ChatbotService } from '../../../../services/chatbot.service';
                             <div class="timeline-marker" [ngClass]="getStatusClass(entry.statut)"></div>
                             <div class="timeline-content">
                                 <div class="timeline-date">{{entry.date | date:'dd/MM/yyyy HH:mm'}}</div>
-                                <div class="timeline-action">{{entry.action}}</div>
+                                <!-- Comment removed from history view -->
                                 <div class="timeline-status small opacity-75">{{getStatusLabel(entry.statut)}}</div>
                             </div>
                         </div>
@@ -298,67 +322,32 @@ import { ChatbotService } from '../../../../services/chatbot.service';
                             <!-- Dropdown column -->
                             <div class="col-md-4">
                                 <label class="form-label fw-bold text-muted small mb-2">Statut du Dossier</label>
-                                <select class="form-select status-select-new" [(ngModel)]="selectedStatus">
-                                    <option value="deposee">Déposée</option>
-                                    <option value="en_cours">En cours de traitement</option>
-                                    <option value="affectee_conventionne">Affectée à un conventionné</option>
+                                <select class="form-select status-select-new" [(ngModel)]="selectedStatus" [disabled]="selectedReclamation.statut === 'resolue' || selectedReclamation.statut === 'rejete'">
+                                    <option value="deposee" [disabled]="selectedReclamation.statut === 'affectee_conventionne'">Déposée</option>
+                                    <option value="en_cours" [disabled]="selectedReclamation.statut === 'affectee_conventionne'">En cours de traitement</option>
                                     <option value="demande_complement">Demande de complément</option>
                                     <option value="resolue">Résolue</option>
-                                    <option value="fermee">Fermée</option>
                                     <option value="rejete">Rejetée</option>
                                 </select>
 
-                                <!-- AI Copilot Trigger Section -->
-                                <div class="ai-copilot-trigger-zone mt-4">
-                                    <div class="ai-copilot-badge">
-                                        <i class="bi bi-stars"></i> CO-PILOTE IA PLATINUM
-                                    </div>
-                                    <p class="text-muted small mt-2 mb-3">
-                                        Générez instantanément une réponse officielle et hautement professionnelle en français pour le citoyen, adaptée au contexte de son dossier.
-                                    </p>
-                                    <button class="copilot-btn-glow w-100" 
-                                            [disabled]="generatingResponse" 
-                                            (click)="generateAIResponse()">
-                                        <span class="d-flex align-items-center justify-content-center gap-2">
-                                            <i class="bi bi-robot font-1-3" [class.spin-copilot]="generatingResponse"></i>
-                                            {{ generatingResponse ? 'Génération...' : 'Rédiger par l\'IA' }}
-                                        </span>
-                                    </button>
+                                <div *ngIf="selectedReclamation.statut === 'resolue' || selectedReclamation.statut === 'rejete'" class="alert alert-info py-2 px-3 small mt-3 border-0 rounded-3">
+                                    <i class="bi bi-info-circle me-1"></i> Le dossier est {{ getStatusLabel(selectedReclamation.statut).toLowerCase() }}.
                                 </div>
+
+                                <!-- AI Copilot Section Removed -->
                             </div>
 
-                            <!-- Comment & Editor Column -->
-                            <div class="col-md-8 d-flex flex-column">
-                                <label class="form-label fw-bold text-muted d-flex justify-content-between align-items-center small mb-2">
-                                    <span>Commentaire Officiel ou Réponse au Citoyen</span>
-                                    <span *ngIf="generatingResponse" class="ai-writing-status text-primary">
-                                        <i class="bi bi-keyboard-fill animate-pulse me-1"></i> Écriture en cours...
-                                    </span>
-                                </label>
-                                
-                                <div class="textarea-wrapper position-relative flex-grow-1">
-                                    <textarea 
-                                        rows="6" 
-                                        class="form-control status-textarea-new" 
-                                        placeholder="Saisissez un commentaire de suivi ou générez une réponse officielle grâce à notre copilote IA à gauche..." 
-                                        [(ngModel)]="statusComment"
-                                        [disabled]="generatingResponse">
-                                    </textarea>
-                                    
-                                    <!-- Tiny glowing pulse when writing -->
-                                    <div *ngIf="generatingResponse" class="textarea-glow-pulse"></div>
-                                </div>
-
-                                <div class="d-flex justify-content-end align-items-center gap-3 mt-3">
+                            <div class="col-md-8 d-flex flex-column justify-content-end">
+                                <div class="d-flex justify-content-end align-items-center gap-3">
                                     <div *ngIf="statusUpdateSuccess" class="status-success-msg">
                                         <i class="bi bi-check-circle-fill me-1"></i> Dossier mis à jour !
                                     </div>
                                     
-                                    <button class="mfooter-btn confirm px-4 py-2" 
-                                            [disabled]="updatingStatus || selectedStatus === selectedReclamation.statut || generatingResponse" 
+                                    <button class="mfooter-btn confirm px-5 py-3" 
+                                            [disabled]="updatingStatus || selectedStatus === selectedReclamation.statut || generatingResponse || selectedReclamation.statut === 'resolue' || selectedReclamation.statut === 'rejete'" 
                                             (click)="updateStatus()">
-                                        <i class="bi bi-check2-circle" *ngIf="!updatingStatus"></i>
-                                        <i class="bi bi-arrow-repeat spin" *ngIf="updatingStatus"></i>
+                                        <i class="bi bi-check2-circle me-2" *ngIf="!updatingStatus"></i>
+                                        <i class="bi bi-arrow-repeat spin me-2" *ngIf="updatingStatus"></i>
                                         Enregistrer les modifications
                                     </button>
                                 </div>
@@ -716,6 +705,19 @@ export class AllReclamationsComponent implements OnInit {
     generatingResponse = false;
 
     userRole: string = '';
+    selectedTypeFilter: string = 'all';
+    filteredReclamations: any[] = [];
+
+    // TRE Filters
+    selectedCountry: string = '';
+    startDate: string = '';
+    endDate: string = '';
+    countries: string[] = [
+        'France', 'Italie', 'Allemagne', 'Canada', 'USA', 'Émirats Arabes Unis',
+        'Qatar', 'Arabie Saoudite', 'Belgique', 'Suisse', 'Royaume-Uni',
+        'Espagne', 'Pays-Bas', 'Suède', 'Libye', 'Algérie', 'Maroc', 'Égypte',
+        'Turquie', 'Koweït', 'Oman'
+    ].sort();
 
     constructor(
         private adminService: AdminService,
@@ -728,11 +730,15 @@ export class AllReclamationsComponent implements OnInit {
     ngOnInit() {
         this.authService.currentUser$.subscribe(u => {
             this.userRole = u?.role || '';
+            // Re-apply filters when role is known
+            this.applyFilters();
         });
+
         const cached = localStorage.getItem('otic_admin_all_reclamations');
         if (cached) {
             try {
                 this.reclamations = JSON.parse(cached);
+                this.applyFilters(); // Show cached values immediately
                 this.loading = false;
             } catch (e) { }
         }
@@ -746,6 +752,7 @@ export class AllReclamationsComponent implements OnInit {
         this.adminService.getAllReclamations().subscribe({
             next: (data) => {
                 this.reclamations = data;
+                this.applyFilters();
                 localStorage.setItem('otic_admin_all_reclamations', JSON.stringify(this.reclamations));
                 this.loading = false;
             },
@@ -754,6 +761,42 @@ export class AllReclamationsComponent implements OnInit {
                 this.loading = false;
             }
         });
+    }
+
+    setTypeFilter(filter: string) {
+        this.selectedTypeFilter = filter;
+        this.applyFilters();
+    }
+
+    applyFilters() {
+        let result = this.reclamations;
+
+        // 1. Role/Type Filter
+        if (this.userRole === 'super_admin') {
+            if (this.selectedTypeFilter === 'regional') {
+                result = result.filter(r => !r.isTRE);
+            } else if (this.selectedTypeFilter === 'tre') {
+                result = result.filter(r => r.isTRE);
+            }
+        }
+
+        // 2. Country Filter (Only for TRE records)
+        if (this.selectedCountry) {
+            result = result.filter(r => r.isTRE && r.user?.paysResidence === this.selectedCountry);
+        }
+
+        // 3. Date Range Filter (Period)
+        if (this.startDate) {
+            const start = new Date(this.startDate);
+            result = result.filter(r => new Date(r.dateCreation) >= start);
+        }
+        if (this.endDate) {
+            const end = new Date(this.endDate);
+            end.setHours(23, 59, 59, 999);
+            result = result.filter(r => new Date(r.dateCreation) <= end);
+        }
+
+        this.filteredReclamations = result;
     }
 
     openDetails(reclamation: any) {
@@ -830,7 +873,6 @@ export class AllReclamationsComponent implements OnInit {
             case 'affectee_conventionne': return 'Affectée';
             case 'demande_complement': return 'Complément';
             case 'resolue': return 'Résolue';
-            case 'fermee': return 'Fermée';
             case 'rejete': return 'Rejetée';
             default: return status;
         }
@@ -844,7 +886,6 @@ export class AllReclamationsComponent implements OnInit {
             case 'affectee_conventionne': return 'bg-primary';
             case 'demande_complement': return 'bg-primary';
             case 'resolue': return 'bg-success';
-            case 'fermee': return 'bg-secondary';
             case 'rejete': return 'bg-danger';
             default: return 'bg-dark';
         }

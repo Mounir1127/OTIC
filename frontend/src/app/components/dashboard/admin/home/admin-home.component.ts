@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../../services/admin.service';
 import { AuthService } from '../../../../services/auth.service';
 import { Api } from '../../../../services/api';
+import { interval, Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-admin-home',
@@ -258,6 +259,8 @@ export class AdminHomeComponent implements OnInit {
         complements: 0
     };
 
+    private refreshSubscription?: Subscription;
+
     constructor(
         private adminService: AdminService,
         private authService: AuthService,
@@ -272,6 +275,16 @@ export class AdminHomeComponent implements OnInit {
         });
         this.loadCaches();
         this.loadData();
+
+        // Auto-refresh admin data every 30 seconds
+        this.refreshSubscription = interval(30000).subscribe(() => {
+            console.log('🔄 Admin Home: Auto-refreshing data...');
+            this.loadData();
+        });
+    }
+
+    ngOnDestroy() {
+        this.refreshSubscription?.unsubscribe();
     }
 
     loadCaches() {

@@ -1,10 +1,11 @@
 import { Injectable, NgZone } from '@angular/core';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatbotService {
-  private apiUrl = 'http://localhost:5000/api/chatbot';
+  private apiUrl = `${environment.apiUrl}/chatbot`;
 
   constructor(private ngZone: NgZone) { }
 

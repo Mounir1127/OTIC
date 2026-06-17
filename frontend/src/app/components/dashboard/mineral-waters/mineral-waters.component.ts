@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, Input, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../../services/api';
@@ -14,6 +14,18 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 2000;">
+      <div *ngIf="showSuccess" class="toast show animate-success-toast align-items-center text-white bg-success border-0 shadow-lg" role="alert">
+        <div class="d-flex p-3">
+          <i class="bi bi-check-circle-fill fs-5 me-3"></i>
+          <div class="toast-body p-0 fw-bold">
+            {{ successMessage }}
+          </div>
+          <button type="button" class="btn-close btn-close-white ms-auto" (click)="showSuccess = false"></button>
+        </div>
+      </div>
+    </div>
+
     <div class="container-fluid dashboard-fade-in" [ngClass]="hideTitle ? 'p-0' : 'p-4'" [dir]="settings.currentSettings.language === 'ar' ? 'rtl' : 'ltr'">
       <div class="row mb-4 align-items-center" *ngIf="!hideTitle">
         <div class="col-md-8">
@@ -52,7 +64,7 @@ Chart.register(...registerables);
         <div class="col-md-3">
           <div class="stat-card p-3 rounded-4 shadow-sm border-0 h-100 bg-white">
             <div class="d-flex align-items-center mb-2">
-              <div class="icon-circle bg-success-subtle text-success me-3">
+              <div class="icon-circle bg-info-subtle text-info me-3">
                 <i class="bi bi-award-fill"></i>
               </div>
               <h6 class="mb-0 text-muted small uppercase fw-semibold ls-1">TOP QUALITÉ</h6>
@@ -76,10 +88,10 @@ Chart.register(...registerables);
         <div class="col-md-3">
           <div class="stat-card p-3 rounded-4 shadow-sm border-0 h-100 bg-white">
             <div class="d-flex align-items-center mb-2">
-              <div class="icon-circle bg-warning-subtle text-warning me-3">
+              <div class="icon-circle bg-primary-subtle text-primary me-3">
                 <i class="bi bi-activity"></i>
               </div>
-              <h6 class="mb-0 text-muted small uppercase fw-semibold ls-1">pH MOYEN</h6>
+              <h6 class="mb-0 text-muted small uppercase fw-semibold ls-1">PH MOYEN</h6>
             </div>
             <h3 class="fw-bold mb-1 text-dark">{{ avgPH.toFixed(1) }}</h3>
             <p class="small text-muted mb-0">Légèrement {{ avgPH > 7 ? 'alcaline' : 'acide' }}</p>
@@ -144,7 +156,7 @@ Chart.register(...registerables);
               <tr *ngFor="let brand of filteredBrands" class="brand-row">
                 <td class="ps-4 fw-medium text-dark">
                   <div class="d-flex align-items-center">
-                    <div class="brand-avatar me-3 text-white" [ngClass]="getNoteClass(brand.notes, 'bg-only')">
+                    <div class="brand-avatar me-3 text-white shadow-sm" style="background: linear-gradient(135deg, #3b82f6, #06b6d4) !important;">
                       {{ brand.marque.charAt(0) }}
                     </div>
                     {{ brand.marque }}
@@ -187,78 +199,107 @@ Chart.register(...registerables);
         </div>
       </div>
 
-      <!-- Add/Edit Modal -->
+      <!-- Add/Edit Modal (Enhanced & Pro) -->
       <div class="custom-modal-backdrop" *ngIf="showModal" (click)="closeModal()"></div>
-      <div class="custom-modal" *ngIf="showModal">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
-            <div class="modal-header bg-gradient-primary text-white py-3">
-              <h5 class="modal-title fw-bold">
-                <i class="bi" [ngClass]="editingBrandId ? 'bi-pencil-square' : 'bi-plus-lg'"></i>
-                {{ editingBrandId ? 'Modifier la marque' : 'Ajouter une nouvelle marque' }}
-              </h5>
-              <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
-            </div>
-            <div class="modal-body p-4 bg-light-subtle">
-              <form #brandForm="ngForm">
-                <div class="row g-4">
-                  <!-- Name Input -->
-                  <div class="col-12">
-                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">IDENTITÉ DE LA MARQUE</label>
-                    <div class="input-group custom-input-group shadow-sm">
-                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-tag text-primary"></i></span>
-                      <input type="text" class="form-control border-start-0 ps-0" name="marque" [(ngModel)]="brandModel.marque" required placeholder="Nom de la marque (ex: Sabi)">
+      <div class="custom-modal wide-modal" *ngIf="showModal">
+        <div class="modal-wrapper">
+          <div class="modal-inner shadow-2xl border-0 rounded-5 overflow-hidden border-glow">
+            
+            <div class="row g-0">
+              <!-- Left Sidebar Decorative -->
+              <div class="col-lg-4 d-none d-lg-block modal-sidebar-gradient p-5 text-white position-relative">
+                <div class="position-relative z-1">
+                  <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 mb-4 small fw-bold ls-2 uppercase">Système OTIC</span>
+                  <h2 class="fw-bold mb-4 mt-2 display-6">{{ editingBrandId ? 'Édition' : 'Nouvelle' }} <br><span class="text-white-50">Ressource</span></h2>
+                  <p class="opacity-75 mb-5 lh-lg">Veuillez renseigner les paramètres physico-chimiques précis pour garantir l'intégrité de la base de données hydrologique.</p>
+                  
+                  <div class="feature-tip d-flex align-items-center mb-4 p-3 rounded-4 bg-white bg-opacity-10 backdrop-blur">
+                    <div class="icon-sq me-3 bg-white text-primary rounded-3 shadow-sm">
+                      <i class="bi bi-shield-check-fill"></i>
                     </div>
+                    <div class="small">Données vérifiées par le Super Admin</div>
                   </div>
 
-                  <!-- TDS & pH -->
-                  <div class="col-md-6">
-                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">TDS (mg/L)</label>
-                    <div class="input-group custom-input-group shadow-sm">
-                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-moisture text-info"></i></span>
-                      <input type="text" class="form-control border-start-0 ps-0" name="tds" [(ngModel)]="brandModel.tds" placeholder="Valeur TDS">
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">POTENTIEL pH</label>
-                    <div class="input-group custom-input-group shadow-sm">
-                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-activity text-warning"></i></span>
-                      <input type="text" class="form-control border-start-0 ps-0" name="ph" [(ngModel)]="brandModel.ph" placeholder="Valeur pH">
-                    </div>
-                  </div>
-
-                  <!-- Nitrates -->
-                  <div class="col-12">
-                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">NITRATES (NO₃⁻)</label>
-                    <div class="input-group custom-input-group shadow-sm">
-                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-virus text-danger"></i></span>
-                      <input type="text" class="form-control border-start-0 ps-0" name="nitrates" [(ngModel)]="brandModel.nitrates" placeholder="Taux de nitrates">
-                    </div>
-                  </div>
-
-                  <!-- Quality Selection -->
-                  <div class="col-12">
-                    <label class="form-label text-muted small fw-bold uppercase ls-1 mb-2">INDICE DE QUALITÉ</label>
-                    <div class="quality-selector d-flex gap-2">
-                       <div *ngFor="let opt of ['Excellent', 'Bien', 'Passable', 'Inacceptable']" 
-                            (click)="brandModel.notes = opt"
-                            [class.active]="brandModel.notes === opt"
-                            class="quality-option flex-grow-1 text-center p-2 rounded-3 cursor-pointer transition"
-                            [ngClass]="getNoteClass(opt)">
-                         {{ opt }}
-                       </div>
-                    </div>
+                  <div class="modal-water-art">
+                    <i class="bi bi-droplet-half opacity-10"></i>
                   </div>
                 </div>
-              </form>
+              </div>
+
+              <!-- Right Content Form -->
+              <div class="col-lg-8 bg-white p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                  <div>
+                    <h3 class="fw-bold text-dark mb-1">{{ editingBrandId ? 'Modifier la marque' : 'Ajouter une nouvelle marque' }}</h3>
+                    <p class="text-muted small">Remplissez les informations ci-dessous</p>
+                  </div>
+                  <button type="button" class="btn-close-custom" (click)="closeModal()"><i class="bi bi-x-lg"></i></button>
+                </div>
+
+                <form #brandForm="ngForm">
+                  <div class="row g-4">
+                    <!-- Brand Name -->
+                    <div class="col-12">
+                      <div class="form-floating custom-floating shadow-sm">
+                        <input type="text" class="form-control" id="brandName" name="marque" 
+                               [(ngModel)]="brandModel.marque" required placeholder="Nom de la marque">
+                        <label for="brandName"><i class="bi bi-tag-fill me-2 text-primary"></i>Nom de la marque d'eau</label>
+                      </div>
+                    </div>
+
+                    <!-- Grid for parameters -->
+                    <div class="col-md-6 text-start">
+                      <label class="form-label text-muted small fw-bold ls-1 mb-2">MINÉRALISATION (TDS)</label>
+                      <div class="input-group pro-input-group shadow-sm">
+                        <span class="input-group-text"><i class="bi bi-moisture"></i></span>
+                        <input type="text" class="form-control" name="tds" [(ngModel)]="brandModel.tds" placeholder="Valeur TDS (mg/L)">
+                      </div>
+                    </div>
+
+                    <div class="col-md-6 text-start">
+                      <label class="form-label text-muted small fw-bold ls-1 mb-2">POTENTIEL HYDROGÈNE (pH)</label>
+                      <div class="input-group pro-input-group shadow-sm">
+                        <span class="input-group-text"><i class="bi bi-activity"></i></span>
+                        <input type="text" class="form-control" name="ph" [(ngModel)]="brandModel.ph" placeholder="Valeur pH (0-14)">
+                      </div>
+                    </div>
+
+                    <div class="col-12 text-start">
+                      <label class="form-label text-muted small fw-bold ls-1 mb-2">TAUX DE NITRATES (NO₃⁻)</label>
+                      <div class="input-group pro-input-group shadow-sm">
+                        <span class="input-group-text"><i class="bi bi-virus"></i></span>
+                        <input type="text" class="form-control" name="nitrates" [(ngModel)]="brandModel.nitrates" placeholder="Nitrates en mg/L">
+                      </div>
+                    </div>
+
+                    <!-- Quality Fancy Selector -->
+                    <div class="col-12 text-start">
+                      <label class="form-label text-muted small fw-bold ls-1 mb-3">ÉVALUATION DE LA QUALITÉ</label>
+                      <div class="row g-2">
+                        <div class="col-3" *ngFor="let opt of ['Excellent', 'Bien', 'Passable', 'Inacceptable']" style="z-index: 10;">
+                          <button type="button" 
+                                  (click)="brandModel.notes = opt"
+                                  class="btn w-100 py-3 rounded-4 quality-btn shadow-sm transition-all"
+                                  [ngClass]="[brandModel.notes === opt ? 'active-quality' : '', 'q-btn-' + opt.toLowerCase()]">
+                            <i class="bi d-block mb-1 fs-4" [ngClass]="getQualityIcon(opt)"></i>
+                            <span class="tiny-text fw-bold">{{ opt }}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-5 pt-4 border-top d-flex gap-3">
+                    <button type="button" class="btn btn-pro-cancel flex-grow-1 py-3 rounded-pill fw-bold" (click)="closeModal()">ANNULER</button>
+                    <button type="button" class="btn btn-pro-submit flex-grow-1 py-3 rounded-pill fw-bold shadow-lg" 
+                            [disabled]="!brandModel.marque" (click)="onSubmit()">
+                      {{ editingBrandId ? 'CONFIRMER LES MODIFICATIONS' : 'ENREGISTRER EN BASE' }}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-            <div class="modal-footer border-0 p-4 bg-white">
-              <button type="button" class="btn btn-light-soft rounded-pill px-4 fw-semibold" (click)="closeModal()">Annuler</button>
-              <button type="button" class="btn btn-primary-gradient rounded-pill px-5 shadow animate-pulse-slow" 
-                      [disabled]="!brandModel.marque" (click)="onSubmit()">
-                {{ editingBrandId ? 'Mettre à jour' : 'Enregistrer la marque' }}
-              </button>
-            </div>
+
           </div>
         </div>
       </div>
@@ -319,10 +360,31 @@ Chart.register(...registerables);
 
     .note-badge { font-weight: 600; font-size: 0.8rem; }
 
-    .bg-excellent { background-color: #dcfce7 !important; color: #15803d !important; border: 1px solid #bbf7d0; }
-    .bg-bien { background-color: #f0fdf4 !important; color: #166534 !important; border: 1px solid #dcfce7; }
-    .bg-passable { background-color: #fef9c3 !important; color: #854d0e !important; border: 1px solid #fef08a; }
-    .bg-inacceptable { background-color: #fee2e2 !important; color: #b91c1c !important; border: 1px solid #fecaca; }
+    /* Enhanced Note Badges with Vibrancy */
+    .bg-excellent { 
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important; 
+      color: white !important; 
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+    .bg-bien { 
+      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important; 
+      color: white !important; 
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    .bg-passable { 
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important; 
+      color: white !important; 
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    }
+    .bg-inacceptable { 
+      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important; 
+      color: white !important; 
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
 
     .bg-only-excellent { background-color: #22c55e; }
     .bg-only-bien { background-color: #10b981; }
@@ -330,7 +392,7 @@ Chart.register(...registerables);
     .bg-only-inacceptable { background-color: #ef4444; }
 
     .nitrate-normal { background-color: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
-    .nitrate-high { background-color: #fff1f2; color: #be123c; border: 1px solid #fecaca; }
+    .nitrate-high { background-color: #ef4444; color: white; border: none; font-weight: 700; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
 
     .search-box input {
       width: 320px;
@@ -367,8 +429,24 @@ Chart.register(...registerables);
       font-size: 0.9rem;
     }
 
-    .bg-gradient-primary {
-      background: linear-gradient(135deg, #1e293b, #334155);
+    /* Enhanced Modal Styles */
+    .wide-modal {
+      max-width: 950px !important;
+    }
+
+    .modal-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-inner {
+      width: 100%;
+      background: white;
+      display: flex;
+      flex-direction: column;
     }
 
     .custom-modal-backdrop {
@@ -392,72 +470,142 @@ Chart.register(...registerables);
       z-index: 1060;
       animation: modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+    
+    .modal-sidebar-gradient {
+      background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%);
+      border-right: 1px solid rgba(255,255,255,0.05);
+    }
 
-    .custom-input-group {
+    .border-glow {
+      box-shadow: 0 0 40px rgba(14,165,233,0.15);
+    }
+    
+    .modal-water-art {
+      position: absolute;
+      bottom: -40px;
+      right: -20px;
+      font-size: 15rem;
+      color: rgba(255,255,255,0.03);
+      transform: rotate(-15deg);
+    }
+
+    .icon-sq {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .backdrop-blur {
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .btn-close-custom {
+      width: 40px;
+      height: 40px;
       border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
+      border: none;
+      background: #f1f5f9;
+      color: #94a3b8;
       transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .custom-input-group:focus-within {
-      border-color: #0ea5e9;
-      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
-    }
-    .custom-input-group .input-group-text {
-      border: none;
-      padding-left: 1.25rem;
-    }
-    .custom-input-group input {
-      border: none;
-      padding: 0.75rem 1rem;
-      font-weight: 500;
-    }
-    .custom-input-group input:focus {
-      box-shadow: none;
-    }
-
-    .quality-option {
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      opacity: 0.6;
-      border: 2px solid transparent !important;
-    }
-    .quality-option:hover { opacity: 0.9; }
-    .quality-option.active {
-      opacity: 1;
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      border-color: rgba(255,255,255,0.3) !important;
-    }
-
-    .btn-primary-gradient {
-      background: linear-gradient(135deg, #2563eb, #7c3aed);
+    .btn-close-custom:hover {
+      background: #ef4444;
       color: white;
-      border: none;
-      font-weight: 600;
+      transform: rotate(90deg);
+    }
+
+    .custom-floating {
+      border: 2px solid #f1f5f9;
+      border-radius: 16px;
+      overflow: hidden;
       transition: all 0.3s ease;
     }
-    .btn-primary-gradient:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.5);
-      color: white;
+    .custom-floating:focus-within {
+      border-color: #0ea5e9;
+      background: white;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
     }
-    .btn-primary-gradient:disabled {
-      background: #cbd5e1;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .btn-light-soft {
-      background: #f1f5f9;
-      color: #64748b;
+    .custom-floating input {
       border: none;
+      height: 64px;
+      padding-top: 1.625rem;
+      padding-left: 1.25rem;
+      font-weight: 600;
+      color: #1e293b;
     }
-    .btn-light-soft:hover { background: #e2e8f0; color: #475569; }
+    .custom-floating label {
+      padding-left: 1.25rem;
+      color: #94a3b8;
+    }
 
-    .animate-pulse-slow {
-      animation: pulse-slow 3s infinite;
+    .pro-input-group {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #f1f5f9;
+      transition: all 0.3s ease;
+    }
+    .pro-input-group:focus-within {
+      border-color: #0ea5e9;
+      box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.05);
+    }
+    .pro-input-group .input-group-text {
+      background: white;
+      border: none;
+      color: #64748b;
+      padding-left: 1.2rem;
+      font-size: 1.1rem;
+    }
+    .pro-input-group input {
+      border: none;
+      padding: 0.8rem 1rem;
+      font-weight: 500;
+    }
+
+    .quality-btn {
+      border: 2px solid #f8fafc;
+      background: #f8fafc;
+      color: #64748b;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .quality-btn:hover { transform: translateY(-3px); background: #f1f5f9; }
+    
+    .q-btn-excellent:hover, .active-quality.q-btn-excellent { border-color: #22c55e !important; color: white !important; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important; }
+    .q-btn-bien:hover, .active-quality.q-btn-bien { border-color: #10b981 !important; color: white !important; background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
+    .q-btn-passable:hover, .active-quality.q-btn-passable { border-color: #f59e0b !important; color: white !important; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
+    .q-btn-inacceptable:hover, .active-quality.q-btn-inacceptable { border-color: #ef4444 !important; color: white !important; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; }
+
+    .active-quality {
+      transform: scale(1.05);
+      border-width: 2px !important;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .tiny-text { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.02em; }
+
+    .btn-pro-cancel {
+      background: #f8fafc;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s;
+    }
+    .btn-pro-cancel:hover { background: #f1f5f9; color: #1e293b; }
+
+    .btn-pro-submit {
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: white;
+      border: none;
+      transition: all 0.3s;
+    }
+    .btn-pro-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -6px rgba(37, 99, 235, 0.5) !important;
     }
 
     @keyframes pulse-slow {
@@ -475,9 +623,19 @@ Chart.register(...registerables);
       from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    .animate-success-toast {
+      animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 12px;
+      min-width: 300px;
+    }
+    @keyframes toastSlideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
   `]
 })
-export class MineralWatersComponent implements OnInit, AfterViewInit {
+export class MineralWatersComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() hideTitle = false;
   @ViewChild('qualityChart') qualityChartRef!: ElementRef;
   @ViewChild('phChart') phChartRef!: ElementRef;
@@ -486,9 +644,10 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
   filteredBrands: any[] = [];
   avgTDS: number = 0;
   avgPH: number = 0;
-  
+
   qualityChart: any;
   phChart: any;
+  chartTimeout: any;
 
   isSuperAdmin = false;
   showModal = false;
@@ -501,12 +660,15 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
     notes: 'Bien'
   };
 
+  showSuccess = false;
+  successMessage = '';
+
   constructor(
     public api: Api,
     public settings: SettingsService,
     private auth: AuthService,
     private adminService: AdminService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Check if user is super admin
@@ -532,10 +694,10 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
         this.brands = data;
         this.filteredBrands = [...this.brands];
         this.calculateBasicStats();
-        
+
         // Save to localStorage for next time
         localStorage.setItem('otic_water_brands', JSON.stringify(data));
-        
+
         // Re-init charts with fresh data
         setTimeout(() => this.initCharts(), 100);
       },
@@ -543,7 +705,7 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
     });
   }
 
-  ngAfterViewInit(): void {}
+  ngAfterViewInit(): void { }
 
   translate(key: string, defaultVal: string): string {
     const val = this.settings.getTranslation(key);
@@ -599,7 +761,7 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
     else if (n.includes('bien')) type = 'bien';
     else if (n.includes('passable')) type = 'passable';
     else if (n.includes('inacceptable')) type = 'inacceptable';
-    
+
     return mode === 'full' ? `bg-${type}` : `bg-only-${type}`;
   }
 
@@ -608,10 +770,22 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
     return (val !== null && val > 15) ? 'nitrate-high' : 'nitrate-normal';
   }
 
+  getQualityIcon(note: string): string {
+    if (!note) return 'bi-question-circle';
+    const n = note.toLowerCase();
+    if (n.includes('excellent')) return 'bi-star-fill';
+    if (n.includes('bien')) return 'bi-check-circle-fill';
+    if (n.includes('passable')) return 'bi-exclamation-circle-fill';
+    if (n.includes('inacceptable')) return 'bi-x-circle-fill';
+    return 'bi-info-circle';
+  }
+
+
+
   onSearch(event: any): void {
     const term = event.target.value.toLowerCase();
-    this.filteredBrands = this.brands.filter(b => 
-      b.marque.toLowerCase().includes(term) || 
+    this.filteredBrands = this.brands.filter(b =>
+      b.marque.toLowerCase().includes(term) ||
       b.notes?.toLowerCase().includes(term)
     );
   }
@@ -624,7 +798,7 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
   initQualityChart(): void {
     if (!this.qualityChartRef) return;
     const ctx = this.qualityChartRef.nativeElement.getContext('2d');
-    
+
     const data = {
       labels: ['Excellent', 'Bien', 'Passable', 'Inacceptable'],
       datasets: [{
@@ -715,18 +889,26 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
         next: () => {
           this.refreshData();
           this.closeModal();
+          this.triggerSuccess('Modification effectuée avec succès !');
         },
-        error: (err) => alert('Erreur lors de la modification: ' + (err.error?.msg || err.message))
+        error: (err) => alert('Erreur lors de la modification : ' + (err.error?.msg || err.message))
       });
     } else {
       this.adminService.createWaterBrand(this.brandModel).subscribe({
         next: () => {
           this.refreshData();
           this.closeModal();
+          this.triggerSuccess('Nouvelle marque ajoutée avec succès !');
         },
-        error: (err) => alert('Erreur lors de l\'ajout: ' + (err.error?.msg || err.message))
+        error: (err) => alert('Erreur lors de l\'ajout : ' + (err.error?.msg || err.message))
       });
     }
+  }
+
+  triggerSuccess(msg: string) {
+    this.successMessage = msg;
+    this.showSuccess = true;
+    setTimeout(() => this.showSuccess = false, 5000);
   }
 
   onDelete(id: string) {
@@ -748,5 +930,11 @@ export class MineralWatersComponent implements OnInit, AfterViewInit {
         this.initCharts();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.qualityChart) this.qualityChart.destroy();
+    if (this.phChart) this.phChart.destroy();
+    if (this.chartTimeout) clearTimeout(this.chartTimeout);
   }
 }

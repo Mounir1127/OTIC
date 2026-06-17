@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetector
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../services/admin.service';
+import { AuthService } from '../../../../services/auth.service';
 import { LocationService } from '../../../../services/location.service';
 import { Chart, registerables } from 'chart.js';
 import jsPDF from 'jspdf';
@@ -69,39 +70,53 @@ export class StatsComponent implements OnInit, AfterViewInit, OnDestroy {
         startDate: '',
         endDate: '',
         region: '',
-        consumerType: ''
+        consumerType: '',
+        isTRE: undefined,
+        country: ''
     };
-
     regions: any[] = [];
+    countries: string[] = [
+        'France', 'Italie', 'Allemagne', 'Canada', 'USA', 'Émirats Arabes Unis',
+        'Qatar', 'Arabie Saoudite', 'Belgique', 'Suisse', 'Royaume-Uni',
+        'Espagne', 'Pays-Bas', 'Suède', 'Libye', 'Algérie', 'Maroc', 'Égypte',
+        'Turquie', 'Koweït', 'Oman'
+    ].sort();
     loading: boolean = true;
     chartCategory: any;
     chartStatus: any;
     chartProcessing: any;
+    userRole: string = '';
 
     constructor(
         private adminService: AdminService,
+        private authService: AuthService,
         private locationService: LocationService,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
+        this.authService.currentUser$.subscribe(user => {
+            this.userRole = user?.role || '';
+            if (this.userRole === 'admin_tre') {
+                this.filters.isTRE = true;
+            }
+        });
+
         this.loadRegions();
-        
+
         // Load from cache for "direct" feel
         const cached = localStorage.getItem('otic_admin_full_stats');
         if (cached) {
             try {
                 this.stats = JSON.parse(cached);
                 this.loading = false;
-                // We'll update charts in afterViewInit if we have data
             } catch (e) { }
         }
-        
+
         this.loadStats();
     }
 
     ngAfterViewInit(): void {
-        // If we loaded from cache, render charts immediately
         if (!this.loading && this.stats.totalCount > 0) {
             setTimeout(() => this.updateCharts(), 100);
         }
@@ -121,7 +136,7 @@ export class StatsComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!this.stats || this.stats.totalCount === 0) {
             this.loading = true;
         }
-        
+
         this.adminService.getStats(this.filters).subscribe({
             next: (data) => {
                 this.stats = data;
@@ -152,7 +167,9 @@ export class StatsComponent implements OnInit, AfterViewInit, OnDestroy {
             startDate: '',
             endDate: '',
             region: '',
-            consumerType: ''
+            consumerType: '',
+            isTRE: undefined,
+            country: ''
         };
         this.loadStats();
     }
@@ -491,7 +508,7 @@ export class StatsComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!name) return '';
         let n = name.trim();
         n = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
-        
+
         if (n === 'Kef') return 'Le Kef';
         if (n === 'Benarous') return 'Ben Arous';
         if (n === 'Sidi bouzid') return 'Sidi Bouzid';

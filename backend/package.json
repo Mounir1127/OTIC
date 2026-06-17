@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "server": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -29,5 +29,9 @@
     "passport-twitter": "^1.0.4",
     "pdfkit": "^0.18.0",
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   }
 }

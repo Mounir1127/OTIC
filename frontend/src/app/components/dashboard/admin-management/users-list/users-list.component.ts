@@ -18,8 +18,8 @@ import { FormsModule } from '@angular/forms';
         </div>
 
         <!-- Advanced Stats Bar -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4" *ngFor="let s of statsList">
+        <div class="row g-3 mb-4 flex-nowrap overflow-auto pb-2">
+            <div class="col-md-3" *ngFor="let s of statsList">
                 <div class="filter-card p-4 rounded-4 shadow-sm border-0 bg-white clickable transition-all" 
                      [class.active]="selectedFilter === s.id" (click)="setFilter(s.id)">
                     <div class="d-flex align-items-center">
@@ -47,7 +47,19 @@ import { FormsModule } from '@angular/forms';
                                    [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Rechercher par nom ou email...">
                         </div>
                     </div>
-                    <div class="col-md-8 text-md-end mt-2 mt-md-0">
+                    <div class="col-md-3 d-flex align-items-center gap-2">
+                         <input type="date" class="form-control form-control-sm rounded-pill" [(ngModel)]="startDate" (change)="applyFilter()">
+                         <span class="text-muted small">à</span>
+                         <input type="date" class="form-control form-control-sm rounded-pill" [(ngModel)]="endDate" (change)="applyFilter()">
+                    </div>
+                    <div class="col-md-2" *ngIf="selectedFilter === 'all' || selectedFilter === 'admin_tre'">
+                        <select class="form-select form-select-sm rounded-pill border-light-subtle bg-light-subtle" 
+                                [(ngModel)]="selectedCountry" (change)="applyFilter()">
+                            <option value="">Tous les pays</option>
+                            <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 text-md-end mt-2 mt-md-0">
                         <span class="small text-muted">Affichage de <strong>{{ filteredUsers.length }}</strong> résultats</span>
                     </div>
                 </div>
@@ -141,6 +153,7 @@ import { FormsModule } from '@angular/forms';
     }
     .icon-circle.all { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
     .icon-circle.admin { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    .icon-circle.admin_tre { background: rgba(16, 185, 129, 0.1); color: #10b981; }
     .icon-circle.consommateur_simple { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 
     /* Custom Table */
@@ -196,11 +209,21 @@ import { FormsModule } from '@angular/forms';
 export class UsersListComponent implements OnInit {
   allUsers: any[] = [];
   filteredUsers: any[] = [];
-  stats = { totalUsers: 0, totalAdmins: 0, totalConsumers: 0 };
+  stats = { totalUsers: 0, totalAdmins: 0, totalConsumers: 0, totalAdminTre: 0 };
   selectedFilter: string = 'all';
   searchTerm: string = '';
   isLoading: boolean = true;
   errorMsg: string = '';
+
+  selectedCountry: string = '';
+  startDate: string = '';
+  endDate: string = '';
+  countries: string[] = [
+    'France', 'Italie', 'Allemagne', 'Canada', 'USA', 'Émirats Arabes Unis',
+    'Qatar', 'Arabie Saoudite', 'Belgique', 'Suisse', 'Royaume-Uni',
+    'Espagne', 'Pays-Bas', 'Suède', 'Libye', 'Algérie', 'Maroc', 'Égypte',
+    'Turquie', 'Koweït', 'Oman'
+  ].sort();
 
   statsList: any[] = [];
 
@@ -240,12 +263,14 @@ export class UsersListComponent implements OnInit {
   calculateStats() {
     this.stats.totalUsers = this.allUsers.length;
     this.stats.totalAdmins = this.allUsers.filter(u => u.role === 'admin_regional' || u.role === 'admin_tre' || u.role === 'super_admin').length;
+    this.stats.totalAdminTre = this.allUsers.filter(u => u.role === 'admin_tre').length;
     this.stats.totalConsumers = this.allUsers.filter(u => u.role === 'consommateur_simple').length;
 
     this.statsList = [
-      { id: 'all', label: 'Utilisateurs', icon: 'bi-people', value: this.stats.totalUsers },
-      { id: 'admin', label: 'Admins', icon: 'bi-shield-shaded', value: this.stats.totalAdmins },
-      { id: 'consommateur_simple', label: 'Consommateurs', icon: 'bi-person', value: this.stats.totalConsumers }
+      { id: 'all', label: 'Tout le monde', icon: 'bi-people', value: this.stats.totalUsers },
+      { id: 'admin', label: 'Admins Régionaux', icon: 'bi-shield-shaded', value: this.stats.totalAdmins - this.stats.totalAdminTre },
+      { id: 'admin_tre', label: 'Admins BDE', icon: 'bi-globe-europe-africa', value: this.stats.totalAdminTre },
+      { id: 'consommateur_simple', label: 'Citoyens', icon: 'bi-person', value: this.stats.totalConsumers }
     ];
   }
 
@@ -263,7 +288,9 @@ export class UsersListComponent implements OnInit {
 
     // Apply category filter
     if (this.selectedFilter === 'admin') {
-      result = result.filter(u => u.role === 'admin_regional' || u.role === 'admin_tre' || u.role === 'super_admin');
+      result = result.filter(u => u.role === 'admin_regional' || u.role === 'super_admin');
+    } else if (this.selectedFilter === 'admin_tre') {
+      result = result.filter(u => u.role === 'admin_tre');
     } else if (this.selectedFilter === 'consommateur_simple') {
       result = result.filter(u => u.role === 'consommateur_simple');
     }
@@ -276,6 +303,22 @@ export class UsersListComponent implements OnInit {
         u.prenom.toLowerCase().includes(term) ||
         u.email.toLowerCase().includes(term)
       );
+    }
+
+    // Apply country filter
+    if (this.selectedCountry) {
+      result = result.filter(u => u.isTRE && u.paysResidence === this.selectedCountry);
+    }
+
+    // Apply date range filter
+    if (this.startDate) {
+      const start = new Date(this.startDate);
+      result = result.filter(u => new Date(u.dateCreation || 0) >= start);
+    }
+    if (this.endDate) {
+      const end = new Date(this.endDate);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter(u => new Date(u.dateCreation || 0) <= end);
     }
 
     this.filteredUsers = result;

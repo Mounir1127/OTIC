@@ -9,7 +9,7 @@ const Governorate = require('../models/Governorate');
 const bcrypt = require('bcryptjs');
 const WaterBrand = require('../models/WaterBrand');
 const ThermalBath = require('../models/ThermalBath');
-const { sendAssignmentEmail, sendWelcomeEmail } = require('../utils/emailService');
+const { sendAssignmentEmail, sendWelcomeEmail, sendStatusUpdateEmail } = require('../utils/emailService');
 const { generateReclamationPDF } = require('../utils/pdfGenerator');
 const multer = require('multer');
 const path = require('path');
@@ -115,11 +115,11 @@ router.get('/consumers', [auth, adminAuth], async (req, res) => {
         const query = { role: 'consommateur_simple' };
 
         if (user.role === 'admin_regional') {
-            const adminGov = user.adresse?.ville; // The admin is assigned to a governorate name (e.g. Bizerte)
+            const adminGov = user.adresse?.ville || user.adresse?.region; // Check both fields
             if (adminGov) {
                 query['adresse.region'] = { $regex: new RegExp(`^${adminGov.trim()}$`, 'i') };
             } else {
-                return res.json([]); // Si l'admin n'a pas de région assignée
+                return res.json([]);
             }
         } else if (user.role === 'admin_tre') {
             query.isTRE = true;
@@ -142,7 +142,7 @@ router.get('/conventionnes', [auth, adminAuth], async (req, res) => {
         let query = {};
 
         if (user.role === 'admin_regional') {
-            const adminRegion = user.adresse?.ville;
+            const adminRegion = user.adresse?.ville || user.adresse?.region;
             if (adminRegion) {
                 query.region = { $regex: new RegExp(`^${adminRegion.trim()}$`, 'i') };
             } else {
@@ -169,7 +169,7 @@ router.get('/reclamations/pending', [auth, adminAuth], async (req, res) => {
         const query = { statut: { $in: ['en_attente', 'deposee'] } };
 
         if (user.role === 'admin_regional') {
-            const adminRegion = user.adresse?.ville;
+            const adminRegion = user.adresse?.ville || user.adresse?.region;
             if (adminRegion) {
                 query.gouvernorat = { $regex: new RegExp(`^${adminRegion.trim()}$`, 'i') };
             } else {
@@ -195,7 +195,7 @@ router.get('/reclamations/complements', [auth, adminAuth], async (req, res) => {
         const query = { statut: 'demande_complement' };
 
         if (user.role === 'admin_regional') {
-            const adminRegion = user.adresse?.ville;
+            const adminRegion = user.adresse?.ville || user.adresse?.region;
             if (adminRegion) {
                 query.gouvernorat = { $regex: new RegExp(`^${adminRegion.trim()}$`, 'i') };
             } else {
@@ -224,13 +224,13 @@ router.get('/reclamations/all', [auth, adminAuth], async (req, res) => {
         console.log(`👤 User: ${user.email} | Role: ${user.role}`);
 
         if (user.role === 'admin_regional') {
-            const adminRegion = user.adresse?.ville;
+            const adminRegion = user.adresse?.ville || user.adresse?.region;
             if (adminRegion) {
                 // Case-insensitive regex match for the governorate
                 query.gouvernorat = { $regex: new RegExp(`^${adminRegion.trim()}$`, 'i') };
                 console.log(`📍 Filtering by Region: ${adminRegion}`);
             } else {
-                console.log('⚠️ Regional Admin has no region (ville) assigned!');
+                console.log('⚠️ Regional Admin has no region (ville/region) assigned!');
                 return res.json([]);
             }
         } else if (user.role === 'admin_tre') {
@@ -260,7 +260,7 @@ router.put('/reclamation/:id/mark-read', [auth, adminAuth], async (req, res) => 
 
         const adminUser = await User.findById(req.user.id);
         if (adminUser.role === 'admin_regional') {
-            const adminRegion = adminUser.adresse?.ville;
+            const adminRegion = adminUser.adresse?.ville || adminUser.adresse?.region;
             if (!reclamation.gouvernorat || reclamation.gouvernorat.toLowerCase() !== adminRegion?.toLowerCase()) {
                 return res.status(403).json({ msg: 'Accès refusé : Cette réclamation appartient à une autre région.' });
             }
@@ -292,9 +292,14 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
 
         const adminUser = await User.findById(req.user.id);
         if (adminUser.role === 'admin_regional') {
-            const adminRegion = adminUser.adresse?.ville;
-            if (!reclamation.gouvernorat || reclamation.gouvernorat.toLowerCase() !== adminRegion?.toLowerCase()) {
-                return res.status(403).json({ msg: 'Accès refusé : Cette réclamation appartient à une autre région.' });
+            const adminRegion = (adminUser.adresse?.ville || adminUser.adresse?.region)?.trim().toLowerCase();
+            const recRegion = reclamation.gouvernorat?.trim().toLowerCase();
+            console.log(`[Assign] Admin région: "${adminRegion}" | Réclamation gouvernorat: "${recRegion}"`);
+            if (!adminRegion) {
+                return res.status(403).json({ msg: 'Accès refusé : Aucune région assignée à cet administrateur.' });
+            }
+            if (!recRegion || recRegion !== adminRegion) {
+                return res.status(403).json({ msg: `Accès refusé : Cette réclamation (${reclamation.gouvernorat}) n'appartient pas à votre région (${adminRegion}).` });
             }
         } else if (adminUser.role === 'admin_tre') {
             if (!reclamation.isTRE) {
@@ -317,6 +322,27 @@ router.put('/reclamation/:id/assign', [auth, adminAuth], async (req, res) => {
         });
 
         await reclamation.save();
+
+        // Notify the CONSUMER (Citoyen) about the assignment / status update
+        try {
+            const newNotification = new Notification({
+                user: reclamation.user,
+                message: `Votre réclamation ${reclamation.trackingCode} a été affectée à un partenaire pour traitement.`,
+                reclamationId: reclamation._id,
+                type: 'status_update'
+            });
+            await newNotification.save();
+
+            const consumer = await User.findById(reclamation.user);
+            if (consumer && consumer.email) {
+                console.log(`[AssignRoute] 🔍 Citoyen trouvé : ${consumer.email}. Déclenchement de l'email...`);
+                await sendStatusUpdateEmail(consumer.email, reclamation, 'Affectée à un partenaire');
+            } else {
+                console.warn(`[AssignRoute] ⚠️ Impossible d'envoyer l'email : Citoyen introuvable ou email manquant.`);
+            }
+        } catch (notifErr) {
+            console.error('[AssignNotif] ❌ Échec de la notification citoyen:', notifErr.message);
+        }
 
         // Send Email to the assigned partner with PDF attachment
         const emailTo = partner.email;
@@ -408,7 +434,7 @@ router.post('/create-conventionne', [auth, adminAuth], async (req, res) => {
         const newPartner = new Conventionne({
             nom,
             email: email.trim().toLowerCase(),
-            region: region || (creator.role === 'admin_regional' ? creator.adresse?.ville : null),
+            region: region || (creator.role === 'admin_regional' ? (creator.adresse?.ville || creator.adresse?.region) : null),
             isTRE: creator.role === 'admin_tre',
             createdBy: req.user.id
         });
@@ -580,7 +606,7 @@ router.put('/user/:id/role', [auth, superAdminAuth], async (req, res) => {
 router.put('/reclamation/:id/status', [auth, adminAuth], async (req, res) => {
     try {
         const { statut, comment } = req.body;
-        const validStatuts = ['deposee', 'en_cours', 'affectee_conventionne', 'resolue', 'fermee', 'rejete', 'demande_complement'];
+        const validStatuts = ['deposee', 'en_cours', 'affectee_conventionne', 'resolue', 'rejete', 'demande_complement'];
         if (!validStatuts.includes(statut)) {
             return res.status(400).json({ msg: 'Statut invalide.' });
         }
@@ -588,9 +614,19 @@ router.put('/reclamation/:id/status', [auth, adminAuth], async (req, res) => {
         const reclamation = await Reclamation.findById(req.params.id);
         if (!reclamation) return res.status(404).json({ msg: 'Réclamation non trouvée.' });
 
+        // Empêcher la modification si le statut actuel est final (résolu ou rejeté)
+        if (['resolue', 'rejete'].includes(reclamation.statut)) {
+            return res.status(400).json({ msg: 'Une réclamation résolue ou rejetée ne peut plus être modifiée.' });
+        }
+
+        // Empêcher le retour en arrière pour les dossiers affectés
+        if (reclamation.statut === 'affectee_conventionne' && ['deposee', 'en_cours'].includes(statut)) {
+            return res.status(400).json({ msg: 'Un dossier affecté à un partenaire ne peut plus repasser en état déposé ou en cours.' });
+        }
+
         const adminUser = await User.findById(req.user.id);
         if (adminUser.role === 'admin_regional') {
-            const adminRegion = adminUser.adresse?.ville;
+            const adminRegion = adminUser.adresse?.ville || adminUser.adresse?.region;
             if (!reclamation.gouvernorat || reclamation.gouvernorat.toLowerCase() !== adminRegion?.toLowerCase()) {
                 return res.status(403).json({ msg: 'Accès refusé : Cette réclamation appartient à une autre région.' });
             }
@@ -604,7 +640,7 @@ router.put('/reclamation/:id/status', [auth, adminAuth], async (req, res) => {
         reclamation.statut = statut;
 
         // Set dateResolution if moving to a final status
-        const terminalStatuses = ['resolue', 'rejete', 'fermee']; // 'traitee' replaced by 'resolue' or 'fermee'
+        const terminalStatuses = ['resolue', 'rejete']; // 'traitee' replaced by 'resolue' or 'fermee'
         if (terminalStatuses.includes(statut) && !terminalStatuses.includes(oldStatut)) {
             reclamation.dateResolution = Date.now();
         } else if (!terminalStatuses.includes(statut) && terminalStatuses.includes(oldStatut)) {
@@ -617,7 +653,6 @@ router.put('/reclamation/:id/status', [auth, adminAuth], async (req, res) => {
             'affectee_conventionne': 'Affectée à un conventionné',
             'demande_complement': 'Complément de dossier requis',
             'resolue': 'Résolue',
-            'fermee': 'Fermée',
             'rejete': 'Rejetée'
         };
 
@@ -640,6 +675,17 @@ router.put('/reclamation/:id/status', [auth, adminAuth], async (req, res) => {
                 type: 'status_update'
             });
             await newNotification.save();
+
+            // Send Email Notification
+            try {
+                const consumer = await User.findById(reclamation.user);
+                if (consumer && consumer.email) {
+                    await sendStatusUpdateEmail(consumer.email, reclamation, statusLabels[statut] || statut);
+                    console.log(`[AdminRoute] Status update email queued for ${consumer.email}`);
+                }
+            } catch (mailErr) {
+                console.error('[AdminRoute] Failed to send status update email:', mailErr.message);
+            }
         }
 
         res.json({ msg: 'Statut mis à jour avec succès.', statut: reclamation.statut });
@@ -655,13 +701,13 @@ router.put('/reclamation/:id/status', [auth, adminAuth], async (req, res) => {
 router.get('/stats', [auth, adminAuth], async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        const { startDate, endDate, region, consumerType } = req.query;
+        const { startDate, endDate, region, consumerType, isTRE, country } = req.query;
 
         let query = {};
 
         // 1. Role-based regional filtering
         if (user.role === 'admin_regional') {
-            const adminRegion = user.adresse?.ville;
+            const adminRegion = user.adresse?.ville || user.adresse?.region;
             if (adminRegion) {
                 query.gouvernorat = { $regex: new RegExp(`^${adminRegion.trim()}$`, 'i') };
             } else {
@@ -684,6 +730,18 @@ router.get('/stats', [auth, adminAuth], async (req, res) => {
 
         if (consumerType) {
             query.complainantType = consumerType;
+        }
+
+        if (isTRE === 'true') {
+            query.isTRE = true;
+        } else if (isTRE === 'false') {
+            query.isTRE = false;
+        }
+
+        if (country) {
+            const usersInCountry = await User.find({ paysResidence: country }).select('_id');
+            const userIds = usersInCountry.map(u => u._id);
+            query.user = { $in: userIds };
         }
 
         if (startDate || endDate) {
@@ -836,14 +894,19 @@ router.delete('/water-brand/:id', [auth, superAdminAuth], async (req, res) => {
 // @desc    Add a new thermal bath
 // @access  Private (Super Admin)
 router.post('/thermal-baths', [auth, superAdminAuth], async (req, res) => {
-    const { name, location, temperature, indications, description, type, trustScore, rating, imageUrl } = req.body;
+    const { name, location, temperature, indications, description, type, trustScore, rating, imageUrl, latitude, longitude } = req.body;
     try {
         let bath = await ThermalBath.findOne({ name });
         if (bath) {
             return res.status(400).json({ msg: 'Cette station existe déjà' });
         }
 
-        bath = new ThermalBath({ name, location, temperature, indications, description, type, trustScore, rating, imageUrl });
+        bath = new ThermalBath({
+            name, location, temperature, indications, description, type,
+            trustScore, rating, imageUrl,
+            latitude: latitude ? Number(latitude) : undefined,
+            longitude: longitude ? Number(longitude) : undefined
+        });
         await bath.save();
         res.json(bath);
     } catch (err) {
@@ -856,7 +919,7 @@ router.post('/thermal-baths', [auth, superAdminAuth], async (req, res) => {
 // @desc    Update a thermal bath
 // @access  Private (Super Admin)
 router.put('/thermal-bath/:id', [auth, superAdminAuth], async (req, res) => {
-    const { name, location, temperature, indications, description, type, trustScore, rating, imageUrl } = req.body;
+    const { name, location, temperature, indications, description, type, trustScore, rating, imageUrl, latitude, longitude } = req.body;
     try {
         let bath = await ThermalBath.findById(req.params.id);
         if (!bath) return res.status(404).json({ msg: 'Station non trouvée' });
@@ -870,6 +933,8 @@ router.put('/thermal-bath/:id', [auth, superAdminAuth], async (req, res) => {
         if (trustScore !== undefined) bath.trustScore = trustScore;
         if (rating !== undefined) bath.rating = rating;
         if (imageUrl !== undefined) bath.imageUrl = imageUrl;
+        if (latitude !== undefined) bath.latitude = Number(latitude);
+        if (longitude !== undefined) bath.longitude = Number(longitude);
 
         await bath.save();
         res.json(bath);

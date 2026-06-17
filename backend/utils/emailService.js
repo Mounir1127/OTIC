@@ -164,8 +164,76 @@ const sendResetLinkEmail = async (to, link) => {
     }
 };
 
+/**
+ * Send an email to a consumer when their reclamation status is updated
+ * @param {string} to - Consumer email
+ * @param {object} reclamation - Reclamation details
+ * @param {string} newStatusLabel - Human readable status
+ */
+const sendStatusUpdateEmail = async (to, reclamation, newStatusLabel) => {
+    const date = new Date().toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const mailOptions = {
+        from: process.env.EMAIL_FROM || '"OTIC Suivi" <noreply@otic.tn>',
+        to: to,
+        subject: `[OTIC] Mise à jour de votre réclamation : ${reclamation.trackingCode}`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+                <div style="background-color: #1e3a8a; padding: 25px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px;">OTIC</h1>
+                    <p style="color: #bfdbfe; margin: 5px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Observatoire de l'Innovation et de la Consommation</p>
+                </div>
+                <div style="padding: 40px; color: #334155; line-height: 1.6;">
+                    <h2 style="color: #1e3a8a; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px;">Mise à jour de dossier</h2>
+                    <p style="font-size: 16px;">Bonjour,</p>
+                    <p style="font-size: 16px;">Nous vous informons que le traitement de votre réclamation <strong>${reclamation.trackingCode}</strong> progresse. Un changement d'état a été enregistré par nos services.</p>
+                    
+                    <div style="background-color: #f8fafc; border-radius: 10px; padding: 25px; margin: 30px 0; text-align: center; border: 1px solid #e2e8f0;">
+                        <span style="display: block; font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px; font-weight: bold;">Nouveau Statut</span>
+                        <span style="display: block; font-size: 22px; color: #2563eb; font-weight: bold;">${newStatusLabel}</span>
+                        <span style="display: block; font-size: 13px; color: #94a3b8; margin-top: 15px;">Le ${date}</span>
+                    </div>
+
+                    <p style="font-size: 15px; color: #475569;">Vous pouvez consulter le détail de l'évolution de votre dossier et interagir avec nos services via votre espace personnel en ligne.</p>
+                    
+                    <div style="text-align: center; margin-top: 40px;">
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:4200'}/login" 
+                           style="background-color: #1e3a8a; color: white; padding: 15px 35px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2);">
+                           Accéder à mon espace
+                        </a>
+                    </div>
+                </div>
+                <div style="background-color: #f1f5f9; padding: 20px; text-align: center; color: #94a3b8; font-size: 11px; border-top: 1px solid #e2e8f0;">
+                    © 2026 Organisation Tunisienne pour l'Information du Consommateur (OTIC)<br>
+                    Siège Social : Tunis, Tunisie
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        console.log(`[EmailService] 📧 Tentative d'envoi d'email de statut à : ${to}`);
+        console.log(`[EmailService] Sujet : [OTIC] Mise à jour de votre réclamation : ${reclamation.trackingCode}`);
+
+        const info = await transporter.sendMail(mailOptions);
+
+        console.log(`[EmailService] ✅ Email envoyé avec succès ! MessageId: ${info.messageId}`);
+        return { success: true, messageId: info.messageId };
+    } catch (error) {
+        console.error('[EmailService] ❌ Erreur FATALE lors de l\'envoi de l\'email de statut:', error.message);
+        return { success: false, error: error.message };
+    }
+};
+
 module.exports = {
     sendAssignmentEmail,
     sendWelcomeEmail,
-    sendResetLinkEmail
+    sendResetLinkEmail,
+    sendStatusUpdateEmail
 };

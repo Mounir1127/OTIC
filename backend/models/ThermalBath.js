@@ -21,7 +21,7 @@ const ThermalBathSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['Station Thermale', 'Centre de Thalassothérapie', 'Hammam Thermal'],
+        enum: ['Station Thermale', 'Centre de Thalassothérapie', 'Hammam Thermal', 'Source Naturelle'],
         default: 'Station Thermale'
     },
     latitude: {

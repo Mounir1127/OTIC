@@ -16,10 +16,18 @@ const app = express();
 // Connect Database
 connectDB();
 
-const path = require('path');
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4300';
 
 // Init Middleware
-app.use(cors());
+app.use(cors({
+    origin: [
+        "http://localhost:4200",
+        "http://localhost:4300",
+        "https://mon-app.netlify.app",
+        FRONTEND_URL
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
 // Express Session
@@ -47,23 +55,25 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => res.send('API Running'));
+app.get('/api', (req, res) => res.send('OTIC API is operational'));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', environment: process.env.NODE_ENV || 'development' }));
 
 // --- Social Auth Routes (Direct) ---
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-app.get('/auth/google/callback', 
-    passport.authenticate('google', { failureRedirect: 'http://localhost:4300/login' }),
+app.get('/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: `${FRONTEND_URL}/login` }),
     (req, res) => {
         // En cas de succès, générer le token JWT pour le frontend
         const payload = { user: { id: req.user.id || req.user._id } };
         jwt.sign(
-            payload, 
-            process.env.JWT_SECRET || "secret", 
-            { expiresIn: 360000 }, 
+            payload,
+            process.env.JWT_SECRET || "secret",
+            { expiresIn: 360000 },
             (err, token) => {
                 if (err) throw err;
-                // Redirection vers le frontend sur le port 4300
-                res.redirect(`http://localhost:4300/login?token=${token}`);
+                // Redirection vers le frontend
+                res.redirect(`${FRONTEND_URL}/login?token=${token}`);
             }
         );
     }

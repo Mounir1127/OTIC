@@ -1,55 +1,49 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AdminService {
-    private apiUrl = 'http://localhost:5000/api/admin';
+    private apiUrl = `${environment.apiUrl}/admin`;
 
     private refreshUsersSource = new Subject<void>();
     refreshUsers$ = this.refreshUsersSource.asObservable();
 
     constructor(private http: HttpClient) { }
 
-    private getHeaders() {
-        const token = localStorage.getItem('token');
-        return new HttpHeaders({
-            'x-auth-token': token || ''
-        });
-    }
-
     getUsers(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/users`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/users`);
     }
 
     getConsumers(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/consumers`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/consumers`);
     }
 
     getConventionnes(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/conventionnes`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/conventionnes`);
     }
 
     getPendingReclamations(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/reclamations/pending`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/reclamations/pending`);
     }
 
     getComplementReclamations(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/reclamations/complements`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/reclamations/complements`);
     }
 
     getAllReclamations(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/reclamations/all`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/reclamations/all`);
     }
 
     assignReclamation(reclamationId: string, conventionneId: string): Observable<any> {
-        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/assign`, { conventionneId }, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/assign`, { conventionneId });
     }
 
     createAdmin(adminData: any): Observable<any> {
-        return this.http.post(`${this.apiUrl}/create-admin`, adminData, { headers: this.getHeaders() });
+        return this.http.post(`${this.apiUrl}/create-admin`, adminData);
     }
 
     createConventionne(userData: any): Observable<any> {
@@ -59,39 +53,39 @@ export class AdminService {
             email: userData.email,
             region: userData.region
         };
-        return this.http.post(`${this.apiUrl}/create-conventionne`, payload, { headers: this.getHeaders() });
+        return this.http.post(`${this.apiUrl}/create-conventionne`, payload);
     }
 
     deletePartner(id: string): Observable<any> {
-        return this.http.delete(`${this.apiUrl}/conventionne/${id}`, { headers: this.getHeaders() });
+        return this.http.delete(`${this.apiUrl}/conventionne/${id}`);
     }
 
     deleteUser(id: string): Observable<any> {
-        return this.http.delete(`${this.apiUrl}/user/${id}`, { headers: this.getHeaders() });
+        return this.http.delete(`${this.apiUrl}/user/${id}`);
     }
 
     updateUserRole(id: string, role: string): Observable<any> {
-        return this.http.put(`${this.apiUrl}/user/${id}/role`, { role }, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/user/${id}/role`, { role });
     }
 
     toggleUserStatus(id: string): Observable<any> {
-        return this.http.put(`${this.apiUrl}/user/${id}/toggle-status`, {}, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/user/${id}/toggle-status`, {});
     }
 
     getUserById(id: string): Observable<any> {
-        return this.http.get(`${this.apiUrl}/user/${id}`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/user/${id}`);
     }
 
     updateUser(id: string, userData: any): Observable<any> {
-        return this.http.put(`${this.apiUrl}/user/${id}`, userData, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/user/${id}`, userData);
     }
 
     markAsRead(reclamationId: string): Observable<any> {
-        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/mark-read`, {}, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/mark-read`, {});
     }
 
     updateReclamationStatus(reclamationId: string, statut: string, comment?: string): Observable<any> {
-        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/status`, { statut, comment }, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/reclamation/${reclamationId}/status`, { statut, comment });
     }
 
     getStats(filters: any = {}): Observable<any> {
@@ -100,42 +94,44 @@ export class AdminService {
         if (filters.endDate) params += `&endDate=${filters.endDate}`;
         if (filters.region) params += `&region=${filters.region}`;
         if (filters.consumerType) params += `&consumerType=${filters.consumerType}`;
+        if (filters.isTRE !== undefined) params += `&isTRE=${filters.isTRE}`;
+        if (filters.country) params += `&country=${filters.country}`;
 
         if (params) {
             params = '?' + params.substring(1);
         }
 
-        return this.http.get(`${this.apiUrl}/stats${params}`, { headers: this.getHeaders() });
+        return this.http.get(`${this.apiUrl}/stats${params}`);
     }
 
     createWaterBrand(brandData: any): Observable<any> {
-        return this.http.post(`${this.apiUrl}/water-brands`, brandData, { headers: this.getHeaders() });
+        return this.http.post(`${this.apiUrl}/water-brands`, brandData);
     }
 
     updateWaterBrand(id: string, brandData: any): Observable<any> {
-        return this.http.put(`${this.apiUrl}/water-brand/${id}`, brandData, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/water-brand/${id}`, brandData);
     }
 
     deleteWaterBrand(id: string): Observable<any> {
-        return this.http.delete(`${this.apiUrl}/water-brand/${id}`, { headers: this.getHeaders() });
+        return this.http.delete(`${this.apiUrl}/water-brand/${id}`);
     }
 
     createThermalBath(bathData: any): Observable<any> {
-        return this.http.post(`${this.apiUrl}/thermal-baths`, bathData, { headers: this.getHeaders() });
+        return this.http.post(`${this.apiUrl}/thermal-baths`, bathData);
     }
 
     updateThermalBath(id: string, bathData: any): Observable<any> {
-        return this.http.put(`${this.apiUrl}/thermal-bath/${id}`, bathData, { headers: this.getHeaders() });
+        return this.http.put(`${this.apiUrl}/thermal-bath/${id}`, bathData);
     }
 
     deleteThermalBath(id: string): Observable<any> {
-        return this.http.delete(`${this.apiUrl}/thermal-bath/${id}`, { headers: this.getHeaders() });
+        return this.http.delete(`${this.apiUrl}/thermal-bath/${id}`);
     }
 
     uploadThermalBathImage(file: File): Observable<any> {
         const formData = new FormData();
         formData.append('image', file);
-        return this.http.post(`${this.apiUrl}/thermal-baths/upload-image`, formData, { headers: this.getHeaders() });
+        return this.http.post(`${this.apiUrl}/thermal-baths/upload-image`, formData);
     }
 
     triggerRefresh() {

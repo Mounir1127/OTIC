@@ -13,6 +13,12 @@ import { Subscription, forkJoin } from 'rxjs';
   template: `
     <div class="profile-page fade-in" [dir]="currentSettings.language === 'ar' ? 'rtl' : 'ltr'">
       
+      <div *ngIf="!dataLoaded" class="d-flex flex-column align-items-center justify-content-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <p class="text-muted">Chargement de votre profil...</p>
+      </div>
+
+      <ng-container *ngIf="dataLoaded">
       <!-- Premium Profile Header -->
       <div class="profile-header mb-4">
         <div class="cover-photo shadow-sm rounded-4">
@@ -76,7 +82,7 @@ import { Subscription, forkJoin } from 'rxjs';
             <div class="col-lg-8">
               <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
                 <div class="card-header bg-white py-3 border-0">
-                  <h5 class="fw-bold mb-0">Informations de base</h5>
+                  <h5 class="fw-bold mb-0">Informations de base & Coordonnées</h5>
                 </div>
                 <div class="card-body p-4">
                   <div class="row g-3">
@@ -322,9 +328,9 @@ import { Subscription, forkJoin } from 'rxjs';
             </div>
           </div>
         </div>
-
-      </div>
-    </div>
+      </div> <!-- Close tab-content -->
+    </ng-container> <!-- Close dataLoaded -->
+  </div> <!-- Close profile-page -->
   `,
   styles: [`
     .profile-page { padding: 30px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
@@ -409,12 +415,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
   currentSettings: UserSettings = { darkMode: false, language: 'fr' };
   activeTab: string = 'overview';
   loading: boolean = false;
-  
+  dataLoaded: boolean = false;
+
   // Data for overview
   userStats: any[] = [];
   userFullInfo: any[] = [];
   recentActivities: any[] = [];
-  
+
   // Data for editing
   editUser: any = {
     nom: '',
@@ -426,21 +433,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
     adresse: { ville: '', region: '', codePostal: '' }
   };
   countries: string[] = [
-    'France', 'Italie', 'Allemagne', 'Canada', 'USA', 'Émirats Arabes Unis', 
-    'Qatar', 'Arabie Saoudite', 'Belgique', 'Suisse', 'Royaume-Uni', 
+    'France', 'Italie', 'Allemagne', 'Canada', 'USA', 'Émirats Arabes Unis',
+    'Qatar', 'Arabie Saoudite', 'Belgique', 'Suisse', 'Royaume-Uni',
     'Espagne', 'Pays-Bas', 'Suède', 'Libye', 'Algérie', 'Maroc', 'Égypte',
     'Turquie', 'Koweït', 'Oman', 'Autre'
   ].sort();
-  
+
   // Password data
   passwordData = { currentPassword: '', newPassword: '', confirmPassword: '' };
-  
+
   // Messages
   successMsg: string = '';
   errorMsg: string = '';
   pwdSuccessMsg: string = '';
   pwdErrorMsg: string = '';
-  
+
   tabs = [
     { id: 'overview', icon: 'bi-grid-fill', labelKey: 'dashboard' },
     { id: 'edit', icon: 'bi-person-gear', labelKey: 'personal_info' },
@@ -469,19 +476,31 @@ export class ProfileComponent implements OnInit, OnDestroy {
     // Sync Profile
     this.subscription.add(
       this.authService.currentUser$.subscribe(user => {
+        console.log('👤 Profile Component - Received User:', user);
         if (user) {
-          this.user = user;
-          this.initEditData(user);
-          this.loadStats(user);
-          this.prepareInfoGrid(user);
+          this.user = { ...user };
+          this.initEditData(this.user);
+          this.loadStats(this.user);
+          this.prepareInfoGrid(this.user);
+          this.dataLoaded = true;
+          this.cdr.detectChanges();
         }
-        this.cdr.detectChanges();
       })
     );
 
-    if (!this.user) {
-      this.authService.getProfile().subscribe();
-    }
+    // If not emitting yet, try to fetch it manually
+    this.authService.getProfile().subscribe({
+      next: (user) => {
+        if (user) {
+          this.user = { ...user };
+          this.initEditData(this.user);
+          this.loadStats(this.user);
+          this.prepareInfoGrid(this.user);
+          this.dataLoaded = true;
+          this.cdr.detectChanges();
+        }
+      }
+    });
   }
 
   onFileSelected(event: any) {
@@ -506,6 +525,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   initEditData(user: any) {
+    if (!user) return;
     this.editUser = {
       nom: user.nom || '',
       prenom: user.prenom || '',
@@ -529,17 +549,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
         const recs = res.reclamations || [];
         this.userStats = [
           { labelKey: 'Total Réclamations', icon: 'bi-file-earmark-text', value: recs.length, color: '#3b82f6' },
-          { labelKey: 'En Cours', icon: 'bi-lightning-charge', value: recs.filter((r:any) => r.statut !== 'resolue' && r.statut !== 'rejete').length, color: '#f59e0b' },
-          { labelKey: 'Résolues', icon: 'bi-check2-circle', value: recs.filter((r:any) => r.statut === 'resolue').length, color: '#10b981' }
+          { labelKey: 'En Cours', icon: 'bi-lightning-charge', value: recs.filter((r: any) => r.statut !== 'resolue' && r.statut !== 'rejete').length, color: '#f59e0b' },
+          { labelKey: 'Résolues', icon: 'bi-check2-circle', value: recs.filter((r: any) => r.statut === 'resolue').length, color: '#10b981' }
         ];
-        
+
         // Mock recent activity based on reclamations
-        this.recentActivities = recs.slice(0, 3).map((r:any) => ({
-           title: r.description,
-           type: r.secteur,
-           date: r.dateCreation
+        this.recentActivities = recs.slice(0, 3).map((r: any) => ({
+          title: r.description,
+          type: r.secteur,
+          date: r.dateCreation
         }));
-        
+
         this.cdr.detectChanges();
       }
     });
@@ -551,20 +571,28 @@ export class ProfileComponent implements OnInit, OnDestroy {
       { label: 'Nom', value: user.nom },
       { label: 'Email', value: user.email },
       { label: 'Téléphone', value: user.telephone },
-      { label: 'CIN', value: user.cin },
-      { 
-        label: user.isTRE ? 'Pays de résidence' : 'Localisation', 
-        value: user.isTRE ? user.paysResidence : `${user.adresse?.ville || ''}, ${user.adresse?.region || ''}` 
-      },
-      { label: 'Type de compte', value: user.isTRE ? 'Tunisien à l\'étranger' : 'Résident en Tunisie' }
+      { label: 'CIN', value: user.cin }
     ];
+
+    if (user.isTRE) {
+      this.userFullInfo.push({ label: 'Pays de résidence', value: user.paysResidence });
+    } else {
+      this.userFullInfo.push({ label: 'Région', value: user.adresse?.region });
+      this.userFullInfo.push({ label: 'Ville', value: user.adresse?.ville });
+      this.userFullInfo.push({ label: 'Code Postal', value: user.adresse?.codePostal });
+    }
+
+    this.userFullInfo.push({
+      label: 'Type de compte',
+      value: user.isTRE ? 'Tunisien à l\'étranger' : 'Résident en Tunisie'
+    });
   }
 
   onUpdateProfile() {
     this.loading = true;
     this.successMsg = '';
     this.errorMsg = '';
-    
+
     this.authService.updateProfile(this.editUser).subscribe({
       next: (res) => {
         this.successMsg = 'Profil mis à jour avec succès !';

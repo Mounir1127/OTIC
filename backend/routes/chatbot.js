@@ -29,11 +29,7 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ msg: 'Please provide a message' });
     }
 
-    // Set headers for SSE (Server-Sent Events)
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for Nginx/proxies
+    // Processing...
 
     try {
         console.log(`[Chatbot] Message from ${userType}: ${message.substring(0, 30)}...`);
@@ -72,27 +68,28 @@ router.post('/', async (req, res) => {
                 'X-Title': 'OTIC Chatbot'
             },
             body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-lite-001',
+                model: 'openrouter/auto',
                 messages: [
-                    {
-                        role: 'system',
-                        content: systemPrompt
-                    },
-                    {
-                        role: 'user',
-                        content: message
-                    }
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: message }
                 ],
                 stream: true
             })
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            console.error('OpenRouter Error:', error);
-            res.write(`data: ${JSON.stringify({ error: 'Erreur API OpenRouter' })}\n\n`);
-            return res.end();
+            const errorText = await response.text();
+            let errorDetail = {};
+            try { errorDetail = JSON.parse(errorText); } catch (e) { errorDetail = { raw: errorText }; }
+            console.error('OpenRouter Error:', errorDetail);
+            return res.status(response.status).json({ msg: 'Erreur API OpenRouter', detail: errorDetail });
         }
+
+        // Set headers for SSE only AFTER we are sure the AI is responding
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
 
         const decoder = new TextDecoder();
         let buffer = '';
@@ -143,10 +140,7 @@ router.post('/copilot', async (req, res) => {
         return res.status(400).json({ msg: 'Please provide a reclamation object' });
     }
 
-    // Set headers for SSE (Server-Sent Events)
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    // Copilot processing...
 
     try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -158,7 +152,7 @@ router.post('/copilot', async (req, res) => {
                 'X-Title': 'OTIC Admin Copilot'
             },
             body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-lite-001',
+                model: 'openrouter/auto',
                 messages: [
                     {
                         role: 'system',
@@ -194,11 +188,17 @@ router.post('/copilot', async (req, res) => {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            console.error('OpenRouter Copilot Error:', error);
-            res.write(`data: ${JSON.stringify({ error: 'Erreur API OpenRouter' })}\n\n`);
-            return res.end();
+            const errorText = await response.text();
+            let errorDetail = {};
+            try { errorDetail = JSON.parse(errorText); } catch (e) { errorDetail = { raw: errorText }; }
+            console.error('OpenRouter Copilot Error:', errorDetail);
+            return res.status(response.status).json({ msg: 'Erreur API OpenRouter (Copilot)', detail: errorDetail });
         }
+
+        // Set headers for SSE only AFTER we are sure the AI is responding
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
 
         const decoder = new TextDecoder();
         let buffer = '';
@@ -248,10 +248,7 @@ router.post('/admin', [auth, adminAuth], async (req, res) => {
         return res.status(400).json({ msg: 'Please provide a message' });
     }
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
+    // Admin processing...
 
     try {
         console.log(`[AdminChat] Processing request for ${req.user.id}`);
@@ -306,7 +303,7 @@ router.post('/admin', [auth, adminAuth], async (req, res) => {
                 'X-Title': 'OTIC Admin Analytics Copilot'
             },
             body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-lite-001',
+                model: 'openrouter/auto',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: message }
@@ -317,10 +314,17 @@ router.post('/admin', [auth, adminAuth], async (req, res) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('OpenRouter Admin Error (Full):', errorText);
-            res.write(`data: ${JSON.stringify({ error: 'Erreur API OpenRouter: ' + errorText })}\n\n`);
-            return res.end();
+            let errorDetail = {};
+            try { errorDetail = JSON.parse(errorText); } catch (e) { errorDetail = { raw: errorText }; }
+            console.error('OpenRouter Admin Error:', errorDetail);
+            return res.status(response.status).json({ msg: 'Erreur API OpenRouter (Admin)', detail: errorDetail });
         }
+
+        // Set headers for SSE only AFTER we are sure the AI is responding
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
 
         const decoder = new TextDecoder();
         let buffer = '';

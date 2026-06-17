@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = 'http://localhost:5000/api/auth';
+    private apiUrl = `${environment.apiUrl}/auth`;
     private currentUserSubject = new BehaviorSubject<any>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -33,20 +34,14 @@ export class AuthService {
     }
 
     getProfile(): Observable<any> {
-        const token = localStorage.getItem('token');
         console.log('📡 Fetching profile from:', `${this.apiUrl}/me`);
-        return this.http.get(`${this.apiUrl}/me`, {
-            headers: { 'x-auth-token': token || '' }
-        }).pipe(
+        return this.http.get(`${this.apiUrl}/me`).pipe(
             tap(user => this.currentUserSubject.next(user))
         );
     }
 
     updateProfile(userData: any): Observable<any> {
-        const token = localStorage.getItem('token');
-        return this.http.put(`${this.apiUrl}/update-profile`, userData, {
-            headers: { 'x-auth-token': token || '' }
-        }).pipe(
+        return this.http.put(`${this.apiUrl}/update-profile`, userData).pipe(
             tap(user => {
                 const current = this.currentUserSubject.value;
                 this.currentUserSubject.next({ ...current, ...user });
@@ -60,10 +55,7 @@ export class AuthService {
     }
 
     changePassword(passwords: any): Observable<any> {
-        const token = localStorage.getItem('token');
-        return this.http.post(`${this.apiUrl}/change-password`, passwords, {
-            headers: { 'x-auth-token': token || '' }
-        });
+        return this.http.post(`${this.apiUrl}/change-password`, passwords);
     }
 
     forgotPassword(email: string): Observable<any> {
@@ -75,12 +67,9 @@ export class AuthService {
     }
 
     uploadPhoto(file: File): Observable<any> {
-        const token = localStorage.getItem('token');
         const formData = new FormData();
         formData.append('photo', file);
-        return this.http.post(`${this.apiUrl}/upload-photo`, formData, {
-            headers: { 'x-auth-token': token || '' }
-        }).pipe(
+        return this.http.post(`${this.apiUrl}/upload-photo`, formData).pipe(
             tap((res: any) => {
                 const current = this.currentUserSubject.value;
                 if (current) {

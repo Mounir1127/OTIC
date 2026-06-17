@@ -439,7 +439,7 @@ export class AssignReclamationComponent implements OnInit {
         // Load from cache for "direct" feel
         const cachedRecs = localStorage.getItem('otic_admin_pending_recs');
         const cachedConvs = localStorage.getItem('otic_admin_conventionnes_list');
-        
+
         if (cachedRecs) {
             try { this.reclamations = JSON.parse(cachedRecs); } catch (e) { }
         }
@@ -504,16 +504,17 @@ export class AssignReclamationComponent implements OnInit {
                 setTimeout(() => this.successMsg = '', 5000);
             },
             error: (err) => {
-                console.error(err);
-                this.errorMsg = 'Erreur lors de l’affectation.';
+                console.error('Assign error:', err);
+                const serverMsg = err?.error?.msg || err?.error?.message || null;
+                this.errorMsg = serverMsg || 'Erreur lors de l\'affectation.';
                 this.assigning = false;
-                setTimeout(() => this.errorMsg = '', 5000);
+                setTimeout(() => this.errorMsg = '', 7000);
             }
         });
     }
 
     getStatusLabel(status: string): string {
-        const labels:any = {
+        const labels: any = {
             'deposee': 'Déposée',
             'en_attente': 'En attente',
             'en_cours': 'En cours',

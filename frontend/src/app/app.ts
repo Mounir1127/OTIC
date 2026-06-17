@@ -17,6 +17,7 @@ export class App implements OnInit {
   message = signal('');
   showChatbot = true;
   chatbotType = 'SIMPLE';
+  isHomePage = false;
 
   constructor(private api: Api, private router: Router) {
     this.router.events.pipe(
@@ -24,6 +25,7 @@ export class App implements OnInit {
     ).subscribe((event: any) => {
       const url = event.urlAfterRedirects || event.url;
       this.showChatbot = !url.includes('/login') && !url.includes('/register');
+      this.isHomePage = url === '/' || url === '/home' || url === '' || url.split('?')[0] === '/';
 
       if (url.includes('/dashboard/admin')) {
         this.chatbotType = 'ADMIN';

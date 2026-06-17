@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Api {
-  private apiUrl = 'http://localhost:5000';
+  private apiUrl = environment.apiUrl.replace('/api', ''); // Base URL for public
   private waterBrandsCache: any[] | null = null;
   private thermalBathsCache: any[] | null = null;
 
