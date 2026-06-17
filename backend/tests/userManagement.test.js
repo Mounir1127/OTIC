@@ -59,7 +59,8 @@ describe('User Profile & Admin Management Unit Tests', () => {
             };
 
             User.findById.mockReturnValue({
-                select: jest.fn().mockResolvedValue(mockUser)
+                select: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockResolvedValue(mockUser)
             });
 
             const res = await request(app)
